@@ -1,6 +1,6 @@
-<mxfile host="app.diagrams.net" modified="2024-04-19T20:27:07.305Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36" etag="7-pCg3XOZbmuHOb3PR08" version="21.8.2" type="device">
+<mxfile host="app.diagrams.net" modified="2024-04-19T20:38:49.211Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36" etag="nFspJGrGfe5Ij5CehIQu" version="21.8.2" type="device">
   <diagram name="Page-1" id="RYtIsaGE_B-wap43TWpy">
-    <mxGraphModel dx="1615" dy="875" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="913" dy="495" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -40,10 +40,10 @@
         <mxCell id="_DLlkHEPcoLW3twBY6Hj-9" value="Show that the vacuum is ready&lt;br&gt;to be used." style="rounded=0;whiteSpace=wrap;html=1;fillColor=#bac8d3;strokeColor=#23445d;" vertex="1" parent="1">
           <mxGeometry x="190.00000000000003" y="425" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="_DLlkHEPcoLW3twBY6Hj-21" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="_DLlkHEPcoLW3twBY6Hj-15" target="_DLlkHEPcoLW3twBY6Hj-20">
+        <mxCell id="_DLlkHEPcoLW3twBY6Hj-69" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;" edge="1" parent="1" source="_DLlkHEPcoLW3twBY6Hj-15" target="_DLlkHEPcoLW3twBY6Hj-68">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="_DLlkHEPcoLW3twBY6Hj-69" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;" edge="1" parent="1" source="_DLlkHEPcoLW3twBY6Hj-15" target="_DLlkHEPcoLW3twBY6Hj-68">
+        <mxCell id="_DLlkHEPcoLW3twBY6Hj-91" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;" edge="1" parent="1" source="_DLlkHEPcoLW3twBY6Hj-15" target="_DLlkHEPcoLW3twBY6Hj-90">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="_DLlkHEPcoLW3twBY6Hj-15" value="Has the vacuum&lt;br&gt;been removed?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fad9d5;strokeColor=#ae4132;" vertex="1" parent="1">
@@ -56,13 +56,13 @@
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="_DLlkHEPcoLW3twBY6Hj-18" value="Has the vacuum&lt;br&gt;been returned?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fad9d5;strokeColor=#ae4132;" vertex="1" parent="1">
-          <mxGeometry x="190.00000000000003" y="755" width="120" height="120" as="geometry" />
+          <mxGeometry x="190.00000000000003" y="780" width="120" height="120" as="geometry" />
         </mxCell>
         <mxCell id="_DLlkHEPcoLW3twBY6Hj-22" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="_DLlkHEPcoLW3twBY6Hj-20" target="_DLlkHEPcoLW3twBY6Hj-18">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="_DLlkHEPcoLW3twBY6Hj-20" value="Set display to &quot;currently vacuuming&quot;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#bac8d3;strokeColor=#23445d;" vertex="1" parent="1">
-          <mxGeometry x="190.00000000000003" y="665" width="120" height="45" as="geometry" />
+          <mxGeometry x="190.00000000000003" y="707.5" width="120" height="45" as="geometry" />
         </mxCell>
         <mxCell id="_DLlkHEPcoLW3twBY6Hj-25" value="&lt;b&gt;&lt;font style=&quot;font-size: 14px;&quot;&gt;Yes&lt;/font&gt;&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
           <mxGeometry x="200.00000000000003" y="395" width="60" height="30" as="geometry" />
@@ -77,7 +77,7 @@
           <mxGeometry x="190.00000000000003" y="625" width="60" height="30" as="geometry" />
         </mxCell>
         <mxCell id="_DLlkHEPcoLW3twBY6Hj-29" value="&lt;b&gt;&lt;font style=&quot;font-size: 14px;&quot;&gt;Yes&lt;/font&gt;&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
-          <mxGeometry x="370" y="630" width="60" height="30" as="geometry" />
+          <mxGeometry x="380" y="645" width="60" height="30" as="geometry" />
         </mxCell>
         <mxCell id="_DLlkHEPcoLW3twBY6Hj-30" value="&lt;b&gt;&lt;font style=&quot;font-size: 14px;&quot;&gt;No&lt;/font&gt;&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
           <mxGeometry x="380" y="225" width="60" height="30" as="geometry" />
@@ -86,7 +86,7 @@
           <mxGeometry x="140.00000000000003" y="550" width="60" height="30" as="geometry" />
         </mxCell>
         <mxCell id="_DLlkHEPcoLW3twBY6Hj-32" value="&lt;b&gt;&lt;font style=&quot;font-size: 14px;&quot;&gt;No&lt;/font&gt;&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
-          <mxGeometry x="140.00000000000003" y="785" width="60" height="30" as="geometry" />
+          <mxGeometry x="140.00000000000003" y="840" width="60" height="30" as="geometry" />
         </mxCell>
         <mxCell id="_DLlkHEPcoLW3twBY6Hj-55" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;" edge="1" parent="1" source="_DLlkHEPcoLW3twBY6Hj-35" target="_DLlkHEPcoLW3twBY6Hj-43">
           <mxGeometry relative="1" as="geometry" />
@@ -103,26 +103,23 @@
         <mxCell id="_DLlkHEPcoLW3twBY6Hj-39" value="Display warning, tell user to vacuum more" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#bac8d3;strokeColor=#23445d;" vertex="1" parent="1">
           <mxGeometry x="460" y="425" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="_DLlkHEPcoLW3twBY6Hj-42" value="Start tracking total time vacuumed" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;fillColor=#e51400;strokeColor=#B20000;fontColor=#ffffff;" vertex="1" parent="1">
-          <mxGeometry x="570" y="690" width="120" height="80" as="geometry" />
-        </mxCell>
-        <mxCell id="_DLlkHEPcoLW3twBY6Hj-48" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="_DLlkHEPcoLW3twBY6Hj-43" target="_DLlkHEPcoLW3twBY6Hj-45">
+        <mxCell id="_DLlkHEPcoLW3twBY6Hj-94" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;" edge="1" parent="1" source="_DLlkHEPcoLW3twBY6Hj-43" target="_DLlkHEPcoLW3twBY6Hj-93">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="_DLlkHEPcoLW3twBY6Hj-43" value="Reset dust level to zero" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#bac8d3;strokeColor=#23445d;" vertex="1" parent="1">
           <mxGeometry x="360" y="675" width="140" height="25" as="geometry" />
         </mxCell>
-        <mxCell id="_DLlkHEPcoLW3twBY6Hj-49" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="_DLlkHEPcoLW3twBY6Hj-45" target="_DLlkHEPcoLW3twBY6Hj-46">
+        <mxCell id="_DLlkHEPcoLW3twBY6Hj-97" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;" edge="1" parent="1" source="_DLlkHEPcoLW3twBY6Hj-45" target="_DLlkHEPcoLW3twBY6Hj-74">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="_DLlkHEPcoLW3twBY6Hj-45" value="Dispense reward" style="whiteSpace=wrap;html=1;fillColor=#bac8d3;strokeColor=#23445d;" vertex="1" parent="1">
-          <mxGeometry x="370" y="730" width="120" height="25" as="geometry" />
+          <mxGeometry x="370" y="860" width="120" height="25" as="geometry" />
         </mxCell>
-        <mxCell id="_DLlkHEPcoLW3twBY6Hj-75" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;" edge="1" parent="1" source="_DLlkHEPcoLW3twBY6Hj-46" target="_DLlkHEPcoLW3twBY6Hj-74">
+        <mxCell id="_DLlkHEPcoLW3twBY6Hj-96" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;" edge="1" parent="1" source="_DLlkHEPcoLW3twBY6Hj-46" target="_DLlkHEPcoLW3twBY6Hj-45">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="_DLlkHEPcoLW3twBY6Hj-46" value="Reset the time since&lt;br&gt;last vacuumed" style="whiteSpace=wrap;html=1;fillColor=#bac8d3;strokeColor=#23445d;" vertex="1" parent="1">
-          <mxGeometry x="370" y="785" width="120" height="45" as="geometry" />
+          <mxGeometry x="370" y="790" width="120" height="45" as="geometry" />
         </mxCell>
         <mxCell id="_DLlkHEPcoLW3twBY6Hj-51" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="_DLlkHEPcoLW3twBY6Hj-52" target="_DLlkHEPcoLW3twBY6Hj-1">
           <mxGeometry relative="1" as="geometry">
@@ -154,19 +151,19 @@
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="_DLlkHEPcoLW3twBY6Hj-71" value="Adafruit Update" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;rounded=0;strokeColor=#0e8088;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;fillColor=#b0e3e6;" vertex="1" parent="1">
-          <mxGeometry x="60" y="740" width="120" height="30" as="geometry" />
+          <mxGeometry x="60" y="770" width="120" height="30" as="geometry" />
         </mxCell>
         <mxCell id="_DLlkHEPcoLW3twBY6Hj-89" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;" edge="1" parent="1" source="_DLlkHEPcoLW3twBY6Hj-74" target="_DLlkHEPcoLW3twBY6Hj-1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="430" y="930" />
-              <mxPoint x="40" y="930" />
-              <mxPoint x="40" y="153" />
+              <mxPoint x="430" y="960" />
+              <mxPoint x="40" y="960" />
+              <mxPoint x="40" y="152" />
             </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="_DLlkHEPcoLW3twBY6Hj-74" value="Adafruit Update" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;rounded=0;strokeColor=#0e8088;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;fillColor=#b0e3e6;" vertex="1" parent="1">
-          <mxGeometry x="370" y="860" width="120" height="30" as="geometry" />
+          <mxGeometry x="370" y="910" width="120" height="30" as="geometry" />
         </mxCell>
         <mxCell id="_DLlkHEPcoLW3twBY6Hj-79" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;" edge="1" parent="1" source="_DLlkHEPcoLW3twBY6Hj-76" target="_DLlkHEPcoLW3twBY6Hj-78">
           <mxGeometry relative="1" as="geometry" />
@@ -203,6 +200,18 @@
         </mxCell>
         <mxCell id="_DLlkHEPcoLW3twBY6Hj-86" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;Reset timer&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#bac8d3;strokeColor=#23445d;" vertex="1" parent="1">
           <mxGeometry x="640" y="330" width="120" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="_DLlkHEPcoLW3twBY6Hj-92" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;" edge="1" parent="1" source="_DLlkHEPcoLW3twBY6Hj-90" target="_DLlkHEPcoLW3twBY6Hj-20">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="_DLlkHEPcoLW3twBY6Hj-90" value="Start tracking total vacuuming time" style="whiteSpace=wrap;html=1;fillColor=#bac8d3;strokeColor=#23445d;" vertex="1" parent="1">
+          <mxGeometry x="190" y="655" width="120" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="_DLlkHEPcoLW3twBY6Hj-95" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;" edge="1" parent="1" source="_DLlkHEPcoLW3twBY6Hj-93" target="_DLlkHEPcoLW3twBY6Hj-46">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="_DLlkHEPcoLW3twBY6Hj-93" value="Reset vacuuming&lt;br&gt;time to zero" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#bac8d3;strokeColor=#23445d;" vertex="1" parent="1">
+          <mxGeometry x="360" y="730" width="140" height="32.5" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
