@@ -34,7 +34,7 @@ Adafruit_MQTT_Publish dustPub = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feed
 void getConc();
 void adaPublish();
 
-Timer publishTimer(sampleTime, adaPublish);
+Timer publishTimer(SAMPLE_TIME, adaPublish);
 
 
 void setup() {
