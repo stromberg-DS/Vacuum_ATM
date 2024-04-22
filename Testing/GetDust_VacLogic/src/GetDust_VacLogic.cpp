@@ -49,7 +49,7 @@ void MQTT_connect();
 bool MQTT_ping();
 long getNewDust();
 void adaPublish();
-void dustToBytes(int dustIn, byte *dustHOut, byte dustMOut, byte dustLOut);
+void dustToBytes(int dustIn, byte *dustHOut, byte *dustMOut, byte *dustLOut);
 
 TCPClient TheClient;
 Adafruit_MQTT_SPARK mqtt(&TheClient, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO_KEY);
@@ -62,6 +62,17 @@ Timer publishTimer(PUBLISH_TIME, adaPublish);
 void setup() {
     Serial.begin(9600);
     waitFor(Serial.isConnected, 10000);
+
+    dustByteH = EEPROM.read(dustHAddress);
+    dustByteM = EEPROM.read(dustMAddress);
+    dustByteL = EEPROM.read(dustLAdress);
+    delay(3000);
+    Serial.printf("Last Dust Levels:\nHigh: 0x%02X\nMed: 0x%02X\nLow: 0x%02X\n\n", dustByteH, dustByteM, dustByteL);
+    int recombinedDust = (dustByteH<<16) | (dustByteM<<8) | dustByteL;
+    Serial.printf("Combined together, old dust: 0x%06X\n\n", recombinedDust);
+
+    // totalDust = (dustByteH<<16) | (dustByteM<<8) | dustByteL;
+    Serial.printf("Last total dust amount: %i\n\n", totalDust);
 
     publishTimer.start();
 
@@ -85,8 +96,14 @@ void loop() {
             incomingDust = strtol((char *)dustSub.lastread,NULL,10);
             Serial.printf("Int incoming dust: %i\n", incomingDust);
             totalDust = totalDust + incomingDust;
-            // dustToBytes(totalDust, &dustByteH, &dustByteM, &dustByteL);
+
+            //Break totalDust into bytes and save into EEPROM
+            dustToBytes(totalDust, &dustByteH, &dustByteM, &dustByteL);
             Serial.printf("High: 0x%02X\nMed: 0x%02X\nLow: 0x%02X\n\n", dustByteH, dustByteM, dustByteL);
+            EEPROM.write(dustHAddress, dustByteH);
+            EEPROM.write(dustMAddress, dustByteM);
+            EEPROM.write(dustLAdress, dustByteL);
+
             totalDustK = totalDust / 1000.0;
             lastRXTime = millis();
             Serial.printf("%0.2fk Dust Particles\n", totalDustK);
