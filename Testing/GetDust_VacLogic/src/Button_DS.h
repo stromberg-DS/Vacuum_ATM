@@ -48,6 +48,7 @@ class Button{
             } else{                                     
                 _clicked = false;
             }
+            _prevButtonState = _buttonState;
 
             return _clicked;
         }
@@ -65,6 +66,7 @@ class Button{
             } else{
                 _released = false;
             }
+            _prevButtonState = _buttonState;
 
             return _released;
         }

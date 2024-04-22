@@ -30,8 +30,10 @@ const int NOW_VACUUM_REWARD_READY =3;
 const int STOPPED_EARLY = 4;
 const int FINISHED_TAKE_REWARD = 5;
 int vacuumState;
+int vacStartTime;
 
-const int VACUUMING_TIME = 30000;   //900,000 is 15 min
+
+const int VACUUMING_TIME = 5000;   //900,000 is 15 min
 const int MAX_DUST = 1000;       //3,500,000 - roughly 1 week @500 particles/15 min 
 const int MAX_TIME = 14;            //14 days
 
@@ -99,6 +101,7 @@ void setup() {
 }
 
 void loop() {
+
     MQTT_connect();
     MQTT_ping();
 
@@ -111,11 +114,24 @@ void loop() {
     }
 
     if(vacButton.isClicked()){
+    //     vacStartTime = millis();
+    //     fillLEDs(0xFFFF00);
+        Serial.printf("Currently Vacuuming!\n");
+    //     Serial.printf("vacStartTime: %i\n\n", vacStartTime);
+    //     vacuumState = NOW_VACUUM_NO_REWARD;
+    }
 
-        totalDust = 0;
-        Serial.printf("Currently Vacuuming!\nDust set to zero!\n\n");
-        vacuumState = CHARGING_NOT_DIRTY;
-        fillLEDs(0xFF0000);
+    //////Need to pause or subtract any time after vacuum is returned
+    //////  Don't want time on the charger to count towards vacuuming time.
+    //////Can't get isClicked and isReleased to both work. Only the first one works.
+    if(vacButton.isReleased()){
+        Serial.printf("Vacuum Returned!\n");
+        // if((millis()-vacStartTime) > VACUUMING_TIME){
+        //     totalDust = 0;
+        //     Serial.printf("You vacuumed for long enough. Have a reward.");
+        // } else{
+        //     Serial.printf("Keep vacuuming...");
+        // }
     }
 
 }
