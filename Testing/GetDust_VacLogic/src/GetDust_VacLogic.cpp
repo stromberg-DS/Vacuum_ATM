@@ -66,13 +66,14 @@ void setup() {
     dustByteH = EEPROM.read(dustHAddress);
     dustByteM = EEPROM.read(dustMAddress);
     dustByteL = EEPROM.read(dustLAdress);
-    delay(3000);
-    Serial.printf("Last Dust Levels:\nHigh: 0x%02X\nMed: 0x%02X\nLow: 0x%02X\n\n", dustByteH, dustByteM, dustByteL);
+    delay(5000);
     int recombinedDust = (dustByteH<<16) | (dustByteM<<8) | dustByteL;
-    Serial.printf("Combined together, old dust: 0x%06X\n\n", recombinedDust);
 
-    // totalDust = (dustByteH<<16) | (dustByteM<<8) | dustByteL;
+
+    totalDust = (dustByteH<<16) | (dustByteM<<8) | dustByteL;
     Serial.printf("Last total dust amount: %i\n\n", totalDust);
+    Serial.printf("Combined together, old dust: 0x%06X\n\n", recombinedDust);
+    Serial.printf("Last Dust Levels:\nHigh: 0x%02X\nMed: 0x%02X\nLow: 0x%02X\n\n", dustByteH, dustByteM, dustByteL);
 
     publishTimer.start();
 
