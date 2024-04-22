@@ -31,7 +31,7 @@ const int FINISHED_TAKE_REWARD = 5;
 int vacuumState;
 
 const int VACUUMING_TIME = 30000;   //900,000 is 15 min
-const int MAX_DUST = 2000;       //3,500,000 - roughly 1 week @500 particles/15 min 
+const int MAX_DUST = 1000;       //3,500,000 - roughly 1 week @500 particles/15 min 
 const int MAX_TIME = 14;            //14 days
 
 //EEPROM Setup
@@ -53,6 +53,7 @@ void getNewDustData();
 void adaPublish();
 void dustToBytes(int dustIn, byte *dustHOut, byte *dustMOut, byte *dustLOut);
 void newDataLEDFlash();
+void fillLEDs(int ledColor, int startLED=0, int lastLED=PIXEL_COUNT);
 
 TCPClient TheClient;
 Adafruit_MQTT_SPARK mqtt(&TheClient, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO_KEY);
@@ -63,20 +64,18 @@ Timer publishTimer(PUBLISH_TIME, adaPublish);
 
 Adafruit_NeoPixel pixel(PIXEL_COUNT, SPI1, WS2812);
 
+Button vacButton(A2);
+
 void setup() {
     Serial.begin(9600);
     waitFor(Serial.isConnected, 10000);
 
     pixel.begin();
     pixel.setBrightness(20);
-    for(int i=0; i<PIXEL_COUNT; i++){
-        pixel.setPixelColor(i, 0x00FFFF);
-    }
+    fillLEDs(0x00FFFF);
     pixel.show();
     delay(1000);
-    for(int i=0; i<PIXEL_COUNT; i++){
-        pixel.setPixelColor(i, 0xFF0000);
-    }
+    fillLEDs(0xFF0000);
     pixel.show();
 
     dustByteH = EEPROM.read(dustHAddress);
@@ -105,12 +104,23 @@ void loop() {
     newDataLEDFlash();
 
     if(totalDust>MAX_DUST){
-        for(int i=0; i<PIXEL_COUNT; i++){
-            pixel.setPixelColor(i, 0x00FF00);
-        }
+        fillLEDs(0x00FF00);
         vacuumState = CHARGING_YES_DIRTY;
     }
 
+    if(vacButton.isClicked()){
+        totalDust = 0;
+        Serial.printf("Currently Vacuuming!\nDust set to zero!\n\n");
+        vacuumState = CHARGING_NOT_DIRTY;
+        fillLEDs(0xFF0000);
+    }
+
+}
+
+void fillLEDs(int ledColor, int startLED, int lastLED){
+    for(int i=startLED; i<lastLED; i++){
+        pixel.setPixelColor(i, ledColor);
+    }
     pixel.show();
 }
 
