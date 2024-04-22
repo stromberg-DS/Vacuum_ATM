@@ -12,6 +12,7 @@
 #include "Adafruit_MQTT/Adafruit_MQTT.h"
 #include "credentials.h"
 #include <neopixel.h>
+#include "Button_DS.h"
 
 
 SYSTEM_MODE(AUTOMATIC);
