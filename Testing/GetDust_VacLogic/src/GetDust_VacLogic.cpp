@@ -27,9 +27,10 @@ const int NOW_VACUUM_NO_REWARD = 2;
 const int NOW_VACUUM_REWARD_READY =3;
 const int STOPPED_EARLY = 4;
 const int FINISHED_TAKE_REWARD = 5;
+int vacuumState;
 
 const int VACUUMING_TIME = 30000;   //900,000 is 15 min
-const int MAX_DUST = 3500000;       //3,500,000 - roughly 1 week @500 particles/15 min 
+const int MAX_DUST = 2000;       //3,500,000 - roughly 1 week @500 particles/15 min 
 const int MAX_TIME = 14;            //14 days
 
 //EEPROM Setup
@@ -47,37 +48,49 @@ int lastRXTime = 0;
 //Functions
 void MQTT_connect();
 bool MQTT_ping();
-long getNewDust();
+void getNewDustData();
 void adaPublish();
 void dustToBytes(int dustIn, byte *dustHOut, byte *dustMOut, byte *dustLOut);
+void newDataLEDFlash();
 
 TCPClient TheClient;
 Adafruit_MQTT_SPARK mqtt(&TheClient, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO_KEY);
 Adafruit_MQTT_Subscribe dustSub = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/plantinfo.dustsensor");
 Adafruit_MQTT_Publish dustPub = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/totaldust");
+
 Timer publishTimer(PUBLISH_TIME, adaPublish);
 
-
+Adafruit_NeoPixel pixel(PIXEL_COUNT, SPI1, WS2812);
 
 void setup() {
     Serial.begin(9600);
     waitFor(Serial.isConnected, 10000);
 
+    pixel.begin();
+    pixel.setBrightness(20);
+    for(int i=0; i<PIXEL_COUNT; i++){
+        pixel.setPixelColor(i, 0x00FFFF);
+    }
+    pixel.show();
+    delay(1000);
+    for(int i=0; i<PIXEL_COUNT; i++){
+        pixel.setPixelColor(i, 0xFF0000);
+    }
+    pixel.show();
+
     dustByteH = EEPROM.read(dustHAddress);
     dustByteM = EEPROM.read(dustMAddress);
     dustByteL = EEPROM.read(dustLAdress);
-    delay(5000);
-    int recombinedDust = (dustByteH<<16) | (dustByteM<<8) | dustByteL;
 
-
+    //recombine totalDust from EEPROM
     totalDust = (dustByteH<<16) | (dustByteM<<8) | dustByteL;
-    Serial.printf("Last total dust amount: %i\n\n", totalDust);
-    Serial.printf("Combined together, old dust: 0x%06X\n\n", recombinedDust);
+    Serial.printf("Last total dust amount: %06X\n\n", totalDust);
     Serial.printf("Last Dust Levels:\nHigh: 0x%02X\nMed: 0x%02X\nLow: 0x%02X\n\n", dustByteH, dustByteM, dustByteL);
 
     publishTimer.start();
 
     mqtt.subscribe(&dustSub);
+
     pinMode(7, OUTPUT);
     digitalWrite(7, LOW);
 
@@ -87,31 +100,52 @@ void loop() {
     MQTT_connect();
     MQTT_ping();
 
-    int incomingDust;
+    getNewDustData();
+    newDataLEDFlash();
 
+    if(totalDust>MAX_DUST){
+        for(int i=0; i<PIXEL_COUNT; i++){
+            pixel.setPixelColor(i, 0x00FF00);
+        }
+        vacuumState = CHARGING_YES_DIRTY;
+    }
+
+    pixel.show();
+}
+
+//Wait for new dust data and save it to the EEPROM
+void getNewDustData(){
+    int incomingDust;
 
     Adafruit_MQTT_Subscribe *subscription;
     while((subscription = mqtt.readSubscription(100))){
         if(subscription == &dustSub){
-            Serial.printf("Raw dust info recieved: %s\n", (char *)dustSub.lastread);
             incomingDust = strtol((char *)dustSub.lastread,NULL,10);
             Serial.printf("Int incoming dust: %i\n", incomingDust);
             totalDust = totalDust + incomingDust;
 
             //Break totalDust into bytes and save into EEPROM
             dustToBytes(totalDust, &dustByteH, &dustByteM, &dustByteL);
-            Serial.printf("High: 0x%02X\nMed: 0x%02X\nLow: 0x%02X\n\n", dustByteH, dustByteM, dustByteL);
             EEPROM.write(dustHAddress, dustByteH);
             EEPROM.write(dustMAddress, dustByteM);
             EEPROM.write(dustLAdress, dustByteL);
 
-            totalDustK = totalDust / 1000.0;
+            totalDustK = totalDust / 1000.0;    //divide by 1,000 for nicer visualization
             lastRXTime = millis();
             Serial.printf("%0.2fk Dust Particles\n", totalDustK);
-            Serial.printf("totalDust in Hex: 0x%06X\n\n", totalDust);
         }
     }
-    
+}
+
+//Break up total Dust into 3 bytes for EEPROM storage
+void dustToBytes(int dustIn, byte *dustHOut, byte *dustMOut, byte *dustLOut){
+    *dustHOut = dustIn>>16;
+    *dustMOut = (dustIn>>8) & 0xFF;
+    *dustLOut = dustIn & 0xFF;
+}
+
+//Flash onboard LED when new data comes in
+void newDataLEDFlash(){
     if(millis() - lastRXTime <500){
         digitalWrite(7, HIGH);  
     } else{
@@ -119,13 +153,7 @@ void loop() {
     }
 }
 
-void dustToBytes(int dustIn, byte *dustHOut, byte *dustMOut, byte *dustLOut){
-    *dustHOut = dustIn>>16;
-    *dustMOut = (dustIn>>8) & 0xFF;
-    *dustLOut = dustIn & 0xFF;
-}
-
-
+//Publish to Adafruit.io
 void adaPublish(){
   if(mqtt.Update()){
     dustPub.publish(totalDustK);
@@ -133,7 +161,7 @@ void adaPublish(){
 }
 
 // Function to connect and reconnect as necessary to the MQTT server.
-// Should be called in the loop function and it will take care if connecting.
+// Should be called in the loop function and it will take care of connecting.
 void MQTT_connect(){
     int8_t ret;
 
