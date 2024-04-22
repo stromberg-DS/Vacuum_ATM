@@ -13,6 +13,7 @@
 #include "credentials.h"
 #include <neopixel.h>
 #include "Button_DS.h"
+#include "Timer_DS.h"
 
 
 SYSTEM_MODE(AUTOMATIC);
@@ -65,6 +66,7 @@ Timer publishTimer(PUBLISH_TIME, adaPublish);
 Adafruit_NeoPixel pixel(PIXEL_COUNT, SPI1, WS2812);
 
 Button vacButton(A2);
+IoTTimer vacTimer;
 
 void setup() {
     Serial.begin(9600);
@@ -109,6 +111,7 @@ void loop() {
     }
 
     if(vacButton.isClicked()){
+
         totalDust = 0;
         Serial.printf("Currently Vacuuming!\nDust set to zero!\n\n");
         vacuumState = CHARGING_NOT_DIRTY;

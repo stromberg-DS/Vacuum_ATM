@@ -52,6 +52,23 @@ class Button{
             return _clicked;
         }
 
+        bool isReleased(){
+            bool _buttonState, _released;
+
+            _buttonState = digitalRead(_buttonPin);
+            if(_pullUp){
+                _buttonState = !_buttonState;
+            }
+
+            if(_buttonState != _prevButtonState){
+                _released = _prevButtonState;
+            } else{
+                _released = false;
+            }
+
+            return _released;
+        }
+
 };
 
 #endif // _BUTTON_H_
