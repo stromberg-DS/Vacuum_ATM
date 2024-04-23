@@ -31,6 +31,7 @@ const int STOPPED_EARLY = 4;
 const int FINISHED_TAKE_REWARD = 5;
 int vacuumState;
 int vacStartTime;
+int elapsedVacTime=0;
 
 
 const int VACUUMING_TIME = 5000;   //900,000 is 15 min
@@ -68,7 +69,7 @@ Timer publishTimer(PUBLISH_TIME, adaPublish);
 Adafruit_NeoPixel pixel(PIXEL_COUNT, SPI1, WS2812);
 
 Button vacButton(A2);
-IoTTimer vacTimer;
+IoTTimer flashTimer;
 
 void setup() {
     Serial.begin(9600);
@@ -91,6 +92,12 @@ void setup() {
     Serial.printf("Last total dust amount: %06X\n\n", totalDust);
     Serial.printf("Last Dust Levels:\nHigh: 0x%02X\nMed: 0x%02X\nLow: 0x%02X\n\n", dustByteH, dustByteM, dustByteL);
 
+    if(totalDust>MAX_DUST){
+        vacuumState = CHARGING_YES_DIRTY;
+    } else{
+        vacuumState = CHARGING_NOT_DIRTY;
+    }
+
     publishTimer.start();
 
     mqtt.subscribe(&dustSub);
@@ -101,38 +108,89 @@ void setup() {
 }
 
 void loop() {
-
+    static bool isFirstVacuumEdge = true;
     MQTT_connect();
-    MQTT_ping();
+    // MQTT_ping();
 
     getNewDustData();
     newDataLEDFlash();
 
-    if(totalDust>MAX_DUST){
-        fillLEDs(0x00FF00);
-        vacuumState = CHARGING_YES_DIRTY;
+    switch (vacuumState){
+        case CHARGING_NOT_DIRTY:
+            fillLEDs(0x000000);
+            break;
+
+        case CHARGING_YES_DIRTY:
+            fillLEDs(0x00FF00);
+            break;
+
+        case NOW_VACUUM_NO_REWARD:
+            fillLEDs(0xFFFF00);
+            break;
+
+        case NOW_VACUUM_REWARD_READY:
+            fillLEDs(0x00FFFF);
+            break;
+
+        case STOPPED_EARLY:
+            if(flashTimer.isFinished()){
+                pixel.clear();
+                pixel.show();
+                vacuumState = CHARGING_YES_DIRTY;
+            } else{
+                fillLEDs(0xFF0000);
+            }
+            break;
+
+        case FINISHED_TAKE_REWARD:
+            break;
+
     }
 
-    if(vacButton.isClicked()){
+
+    //Has the vacuum been returned to the charger?
+    if(vacButton.isReleased()){
+        elapsedVacTime = elapsedVacTime + (millis()-vacStartTime);
+        Serial.printf("Releaseeeed!\nElapsed Time: %i\n\n", elapsedVacTime);
+        if(elapsedVacTime > 5000){
+            vacuumState = NOW_VACUUM_REWARD_READY;
+        } else{
+            vacuumState = STOPPED_EARLY;
+            flashTimer.startTimer(2000);
+        }
+    }
+
+    //Has the vacuum been taken off the charger?
+    if(vacButton.isPressed()){
+        if(isFirstVacuumEdge){
+            vacStartTime = millis();
+            isFirstVacuumEdge = false;
+            vacuumState = NOW_VACUUM_NO_REWARD;
+        }
+    } else{
+        isFirstVacuumEdge = true;
+    }
+
+    // if(vacButton.isClicked()){
     //     vacStartTime = millis();
     //     fillLEDs(0xFFFF00);
-        Serial.printf("Currently Vacuuming!\n");
+        // Serial.printf("Currently Vacuuming!\n");
     //     Serial.printf("vacStartTime: %i\n\n", vacStartTime);
     //     vacuumState = NOW_VACUUM_NO_REWARD;
-    }
+    // }
 
     //////Need to pause or subtract any time after vacuum is returned
     //////  Don't want time on the charger to count towards vacuuming time.
     //////Can't get isClicked and isReleased to both work. Only the first one works.
-    if(vacButton.isReleased()){
-        Serial.printf("Vacuum Returned!\n");
+    // if(vacButton.isReleased()){
+    //     Serial.printf("Vacuum Returned!\n");
         // if((millis()-vacStartTime) > VACUUMING_TIME){
         //     totalDust = 0;
         //     Serial.printf("You vacuumed for long enough. Have a reward.");
         // } else{
         //     Serial.printf("Keep vacuuming...");
         // }
-    }
+    // }
 
 }
 
@@ -211,18 +269,18 @@ void MQTT_connect(){
     Serial.printf("MQTT Connected!\n");
 }
 
-bool MQTT_ping(){
-    static unsigned int last;
-    bool pingStatus;
+// bool MQTT_ping(){
+//     static unsigned int last;
+//     bool pingStatus;
 
-    if ((millis()-last)>120000){
-        Serial.printf("Pinging MQTT \n");
-        pingStatus = mqtt.ping();
-        if(!pingStatus){
-            Serial.printf("Disconnecting \n");
-            mqtt.disconnect();
-        }
-        last = millis();
-    }
-    return pingStatus;
-}
+//     if ((millis()-last)>120000){
+//         Serial.printf("Pinging MQTT \n");
+//         pingStatus = mqtt.ping();
+//         if(!pingStatus){
+//             Serial.printf("Disconnecting \n");
+//             mqtt.disconnect();
+//         }
+//         last = millis();
+//     }
+//     return pingStatus;
+// }
