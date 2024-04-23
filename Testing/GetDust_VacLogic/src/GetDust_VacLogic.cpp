@@ -32,6 +32,7 @@ const int FINISHED_TAKE_REWARD = 5;
 int vacuumState;
 int vacStartTime;
 int elapsedVacTime=0;
+int lastVacStateTime;
 
 
 const int VACUUMING_TIME = 5000;   //900,000 is 15 min
@@ -94,8 +95,10 @@ void setup() {
 
     if(totalDust>MAX_DUST){
         vacuumState = CHARGING_YES_DIRTY;
+        lastVacStateTime = millis();
     } else{
         vacuumState = CHARGING_NOT_DIRTY;
+        lastVacStateTime = millis();
     }
 
     publishTimer.start();
@@ -129,22 +132,44 @@ void loop() {
             break;
 
         case NOW_VACUUM_REWARD_READY:
-            fillLEDs(0x00FFFF);
+            if(millis()-lastVacStateTime < 2000){
+                fillLEDs(0x00FFFF);
+            } else{
+                vacuumState = FINISHED_TAKE_REWARD;
+                lastVacStateTime = millis();
+            }
             break;
 
         case STOPPED_EARLY:
-            if(flashTimer.isFinished()){
-                pixel.clear();
-                pixel.show();
+            if(millis()-lastVacStateTime<2000){
+                ////////////Would be nice to make this blinking a function
+                if((millis()-lastVacStateTime)%500<250){
+                    fillLEDs(0xFF0000);
+                } else{
+                    fillLEDs(0x550000);
+                }
+            }else{
+                fillLEDs(0);
                 vacuumState = CHARGING_YES_DIRTY;
-            } else{
-                fillLEDs(0xFF0000);
+                lastVacStateTime = millis();
             }
             break;
 
         case FINISHED_TAKE_REWARD:
+            if(millis()-lastVacStateTime <2000){
+                fillLEDs(0xFFFFFF);
+            } else{
+                vacuumState = CHARGING_NOT_DIRTY;
+                lastVacStateTime = millis();
+            }
             break;
 
+    }
+
+/////////// CANT QUITE FIGURE OUT HOW TO GO TO DIRTY STATE W/O OVERRIDING OTHER STATES!
+    if(totalDust<MAX_DUST){
+        fillLEDs(0x000000);
+        vacuumState = CHARGING_NOT_DIRTY;
     }
 
 
@@ -153,9 +178,13 @@ void loop() {
         elapsedVacTime = elapsedVacTime + (millis()-vacStartTime);
         Serial.printf("Releaseeeed!\nElapsed Time: %i\n\n", elapsedVacTime);
         if(elapsedVacTime > 5000){
+            totalDust = 0;
+            elapsedVacTime = 0;
             vacuumState = NOW_VACUUM_REWARD_READY;
+            lastVacStateTime = millis();
         } else{
             vacuumState = STOPPED_EARLY;
+            lastVacStateTime = millis();
             flashTimer.startTimer(2000);
         }
     }
@@ -166,6 +195,7 @@ void loop() {
             vacStartTime = millis();
             isFirstVacuumEdge = false;
             vacuumState = NOW_VACUUM_NO_REWARD;
+            lastVacStateTime = millis();
         }
     } else{
         isFirstVacuumEdge = true;
