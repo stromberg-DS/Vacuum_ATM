@@ -36,8 +36,8 @@ int lastVacStateTime;
 
 
 const int VACUUMING_TIME = 5000;   //900,000 is 15 min
-const int MAX_DUST = 1000;       //3,500,000 - roughly 1 week @500 particles/15 min 
-const int MAX_TIME_SINCE_VAC = 300;            //14 days
+const int MAX_DUST = 500;       //3,500,000 - roughly 1 week @500 particles/15 min 
+const int MAX_TIME_SINCE_VAC = 300;            //1,209,600sec = 14 days
 
 //EEPROM Setup
 int len = EEPROM.length();
@@ -114,18 +114,19 @@ void setup() {
 }
 
 void loop() {
+    static int lastPrintTime;
     static bool isFirstVacuumEdge = true;
     MQTT_connect();
 
     unsigned int timeSinceVacuumed;
     currentUnixTime = Time.now();
-    EEPROM.put(timeAddress, currentUnixTime);
     timeSinceVacuumed = currentUnixTime - previousUnixTime;
-    Serial.printf("CurrentTime: %u\n", currentUnixTime);
-    Serial.printf("LastVacuumTime: %u\n", previousUnixTime);
-    Serial.printf("TimeSinceVacuumed: %u\n\n", timeSinceVacuumed);
-    delay(1000);
 
+    if(millis()-lastPrintTime > 1000){
+        Serial.printf("TotalDust: %0.2f x1000\n", totalDustK);
+        Serial.printf("TimeSinceVacuumed: %u\n\n", timeSinceVacuumed);
+        lastPrintTime = millis();
+    }
     getNewDustData();
     newDataLEDFlash();
 
@@ -179,7 +180,9 @@ void loop() {
 
 /////////// CANT QUITE FIGURE OUT HOW TO GO TO DIRTY STATE W/O OVERRIDING OTHER STATES!
     if((totalDust>MAX_DUST) || (timeSinceVacuumed > MAX_TIME_SINCE_VAC)){
-    
+        fillLEDs(0x00FF00);
+        vacuumState = CHARGING_YES_DIRTY;
+
         //Has the vacuum been returned to the charger?
         if(vacButton.isReleased()){
             elapsedVacTime = elapsedVacTime + (millis()-vacStartTime);

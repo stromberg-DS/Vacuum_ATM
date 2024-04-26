@@ -32,7 +32,7 @@ void setup() {
   Serial.printf("\nPreviousTime = %i\n\n", previousTime);
   Serial.printf("Waiting to connect to Particle cloud.");
   while(!Particle.connected()){
-    Serial.printf(".");
+    // Serial.printf(".");
   }
 }
 
