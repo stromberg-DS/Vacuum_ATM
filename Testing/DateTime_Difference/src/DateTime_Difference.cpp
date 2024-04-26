@@ -26,6 +26,7 @@ void setup() {
     timeByte[i] = EEPROM.read(timeByteAddress[i]);
     Serial.printf("timeByte[%i] = %X\n", i, timeByte[i]);
   }
+  //Why not use EEPROM.get(); ????
   previousTime = (timeByte[0]<<24) | (timeByte[1]<<16) | (timeByte[2]<<8) | timeByte[3];
   Serial.printf("\nPreviousTime = %i\n\n", previousTime);
   Serial.printf("Waiting to connect to Particle cloud.");
@@ -37,6 +38,7 @@ void setup() {
 void loop() {
   uint32_t timeDifference;
   currentTime = Time.now();
+  //Why not use EEPROM.put(); ???
   timeToBytes(currentTime, &timeByte[0], &timeByte[1], &timeByte[2], &timeByte[3]);
   for(int i=0; i<4; i++){
     EEPROM.write(timeByteAddress[i], timeByte[i]);
