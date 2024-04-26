@@ -27,7 +27,8 @@ void setup() {
     Serial.printf("timeByte[%i] = %X\n", i, timeByte[i]);
   }
   //Why not use EEPROM.get(); ????
-  previousTime = (timeByte[0]<<24) | (timeByte[1]<<16) | (timeByte[2]<<8) | timeByte[3];
+  previousTime = EEPROM.get(timeByte[0], previousTime);
+  // previousTime = (timeByte[0]<<24) | (timeByte[1]<<16) | (timeByte[2]<<8) | timeByte[3];
   Serial.printf("\nPreviousTime = %i\n\n", previousTime);
   Serial.printf("Waiting to connect to Particle cloud.");
   while(!Particle.connected()){
@@ -38,18 +39,21 @@ void setup() {
 void loop() {
   uint32_t timeDifference;
   currentTime = Time.now();
+  EEPROM.put(timeByte[0], currentTime);
   //Why not use EEPROM.put(); ???
-  timeToBytes(currentTime, &timeByte[0], &timeByte[1], &timeByte[2], &timeByte[3]);
-  for(int i=0; i<4; i++){
-    EEPROM.write(timeByteAddress[i], timeByte[i]);
-    // Serial.printf("Writing byte#%i: %02X\n", i, timeByte[i]);
-  }
+  // timeToBytes(currentTime, &timeByte[0], &timeByte[1], &timeByte[2], &timeByte[3]);
+  // for(int i=0; i<4; i++){
+  //   EEPROM.write(timeByteAddress[i], timeByte[i]);
+  //   // Serial.printf("Writing byte#%i: %02X\n", i, timeByte[i]);
+  // }
   timeDifference = currentTime - previousTime;
   Serial.printf("Current Time: %i\n", currentTime);
   Serial.printf("Previous Time: %i\n\n", previousTime);
 
   Serial.printf("Time difference: %i seconds\n", timeDifference);
-  Serial.printf("Time difference: %f minutes\n\n", float(timeDifference/60.0));
+  Serial.printf("Time difference: %0.1f minutes\n", float(timeDifference/60.0));
+  Serial.printf("Time difference: %0.2f hours\n", float(timeDifference/(60.0*60.0)));
+  Serial.printf("Time difference: %0.3f days\n\n", float(timeDifference/(60.0*60.0*24)));
   delay(1000);
 
 }
