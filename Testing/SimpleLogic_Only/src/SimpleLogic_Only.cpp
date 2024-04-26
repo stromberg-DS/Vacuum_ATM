@@ -26,6 +26,7 @@ int vacTotalTime = 0;
 int prevVacTime = 0;
 
 void counterTimer();
+void pixeFill(int pixelColor);
 
 Adafruit_NeoPixel pixel(PIXEL_COUNT, SPI1, WS2812);
 Button vacuum(A2);
@@ -35,7 +36,7 @@ void setup() {
   Serial.begin(9600);
 
   pixel.begin();
-  pixel.setBrightness(30);
+  pixel.setBrightness(10);
   pixel.clear();
   pixel.show();
   pixel.setPixelColor(0, 255);
@@ -55,9 +56,9 @@ void loop() {
   ////  not pressed = vacuuming
   ////  clicked = putting back on charger
 
-
+  //
   if((dustSim > 10000) || (timeSim>30000)){   //If house is dirty or it's been too long
-    pixel.setPixelColor(0, GREEN);
+    pixeFill(GREEN);
 
     if(vacuum.isReleased()){      //When vacuum removed
       vacStart = millis();        //set the start vacuum timer
@@ -66,12 +67,13 @@ void loop() {
     if(!vacuum.isPressed()){        //if you are vacuuming
       vacTotalTime = prevVacTime+ (millis() - vacStart);
       if(vacTotalTime > 4000){
-        pixel.setPixelColor(0, BLUE);
+        pixeFill(BLUE);
       } else{
-        pixel.setPixelColor(0, YELLOW);
+        pixeFill(YELLOW);
       }
     }
 
+/////////////NEED TO CHANGE PREVIOUS STATE IN BUTTON CLASS////////////////
     if(vacuum.isClicked()){         //if vacuum returned
       if(vacTotalTime > 4000){
         dustSim =0;
@@ -79,37 +81,18 @@ void loop() {
         vacTotalTime =0;
         prevVacTime = 0;
       }else{
-        pixel.setPixelColor(0, GREEN);
+        pixeFill(GREEN);
         prevVacTime = vacTotalTime;
       }
     }
 
 
   }else{
-    pixel.setPixelColor(0, RED);
+    pixeFill(RED); 
+
   }
 
-
-
-
-
-  pixel.show(); 
-//Pseudo pseudo code
-
-  //Is the dust above the threshold?
-      //yes - turn LEDs green, ready to vacuum
-          //Has the vacuum been removed?
-              //YES - track time since removal, display yellow
-              //NO - continue to show ready (green)
-
-      //no 
-            //Has it been long enough to vacuum anyways?
-                //yes - turn LEDs green, ready to vacuum
-                //no - LEDs red, not ready to vacuum
-  
-  //
-
-  
+  pixel.show();  
 }
 
 
@@ -127,5 +110,11 @@ void counterTimer(){
     dustSim++;
     timeSim+= 1.25;
     countTime =0;
+  }
+}
+
+void pixeFill(int pixelColor){
+  for(int i=0; i<PIXEL_COUNT; i++){
+    pixel.setPixelColor(i, pixelColor);
   }
 }
