@@ -132,6 +132,8 @@ void loop() {
     newDataLEDFlash();
 
 
+
+
     /////////// CANT QUITE FIGURE OUT HOW TO GO TO DIRTY STATE W/O OVERRIDING OTHER STATES!
     if((totalDust>MAX_DUST) || (timeSinceVacuumed > MAX_TIME_SINCE_VAC)){
         // vacuumState = CHARGING_YES_DIRTY;
@@ -139,9 +141,11 @@ void loop() {
 
         //////////////////
         ///Testing a big nested if/////
+        //Is the vacuum returned to charger?
         // if(vacButton.isReleased()){
         //     elapsedVacTime = elapsedVacTime + (millis()-vacStartTime);
         //     Serial.printf("Releaseeeed!\nElapsed Time: %i\n\n", elapsedVacTime);
+        //     //Has the vacuum been used long enough?
         //     if(elapsedVacTime > 5000){
         //         totalDust = 0;
         //         elapsedVacTime = 0;
@@ -155,15 +159,15 @@ void loop() {
         //         flashTimer.startTimer(2000);
         //     }
         // } else if(vacButton.isClicked()){   //When vacuum is removed
-        //     if(isFirstVacuumEdge){
+        //     // if(isFirstVacuumEdge){
         //         vacStartTime = millis();
         //         isFirstVacuumEdge = false;
         //         vacuumState = NOW_VACUUM_NO_REWARD;
         //         lastVacStateTime = millis();
-        //     }
+        //     // }
         // } else{
         //     isFirstVacuumEdge = true;
-        //     vacuumState = CHARGING_NOT_DIRTY;
+        //     vacuumState = CHARGING_YES_DIRTY;
         //     lastVacStateTime = millis();
         // }
         ////end of test////
@@ -182,7 +186,7 @@ void loop() {
                 vacuumState = NOW_VACUUM_REWARD_READY;
                 lastVacStateTime = millis();
             } else{
-                vacuumState = STOPPED_EARLY;
+                vacuumState = STOPPED_EARLY;    //I think I'm setting vacuum state here, but...
                 lastVacStateTime = millis();
                 flashTimer.startTimer(2000);
             }
@@ -198,7 +202,7 @@ void loop() {
             }
         } else{
             isFirstVacuumEdge = true;
-            vacuumState = CHARGING_YES_DIRTY;
+            vacuumState = CHARGING_YES_DIRTY;       //I'm setting it again here later
         }
 
     } else{
