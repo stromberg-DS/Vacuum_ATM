@@ -23,10 +23,10 @@ const int PIXEL_COUNT = 14;
 const int PUBLISH_TIME = 30000;
 
 //Vacuum States
-const int CHARGING_NOT_DIRTY = 0;
-const int CHARGING_YES_DIRTY = 1;
-const int NOW_VACUUM_NO_REWARD = 2;
-const int NOW_VACUUM_REWARD_READY =3;
+const int CHARGING_NOT_DIRTY = 0; //red
+const int CHARGING_YES_DIRTY = 1; //green
+const int NOW_VACUUM_NO_REWARD = 2; //yellos
+const int NOW_VACUUM_REWARD_READY =3; //
 const int STOPPED_EARLY = 4;
 const int FINISHED_TAKE_REWARD = 5;
 int vacuumState;
@@ -37,7 +37,7 @@ int lastVacStateTime;
 
 const int VACUUMING_TIME = 5000;   //900,000 is 15 min
 const int MAX_DUST = 500;       //3,500,000 - roughly 1 week @500 particles/15 min 
-const int MAX_TIME_SINCE_VAC = 300;            //1,209,600sec = 14 days
+const int MAX_TIME_SINCE_VAC = 30;            //1,209,600sec = 14 days
 
 //EEPROM Setup
 int len = EEPROM.length();
@@ -127,23 +127,105 @@ void loop() {
         Serial.printf("TimeSinceVacuumed: %u\n\n", timeSinceVacuumed);
         lastPrintTime = millis();
     }
+
     getNewDustData();
     newDataLEDFlash();
 
+
+    /////////// CANT QUITE FIGURE OUT HOW TO GO TO DIRTY STATE W/O OVERRIDING OTHER STATES!
+    if((totalDust>MAX_DUST) || (timeSinceVacuumed > MAX_TIME_SINCE_VAC)){
+        // vacuumState = CHARGING_YES_DIRTY;
+        lastVacStateTime = millis();
+
+        //////////////////
+        ///Testing a big nested if/////
+        // if(vacButton.isReleased()){
+        //     elapsedVacTime = elapsedVacTime + (millis()-vacStartTime);
+        //     Serial.printf("Releaseeeed!\nElapsed Time: %i\n\n", elapsedVacTime);
+        //     if(elapsedVacTime > 5000){
+        //         totalDust = 0;
+        //         elapsedVacTime = 0;
+        //         previousUnixTime = currentUnixTime;
+        //         EEPROM.put(timeAddress, currentUnixTime); //log vacuum time
+        //         vacuumState = NOW_VACUUM_REWARD_READY;
+        //         lastVacStateTime = millis();
+        //     } else{
+        //         vacuumState = STOPPED_EARLY;
+        //         lastVacStateTime = millis();
+        //         flashTimer.startTimer(2000);
+        //     }
+        // } else if(vacButton.isClicked()){   //When vacuum is removed
+        //     if(isFirstVacuumEdge){
+        //         vacStartTime = millis();
+        //         isFirstVacuumEdge = false;
+        //         vacuumState = NOW_VACUUM_NO_REWARD;
+        //         lastVacStateTime = millis();
+        //     }
+        // } else{
+        //     isFirstVacuumEdge = true;
+        //     vacuumState = CHARGING_NOT_DIRTY;
+        //     lastVacStateTime = millis();
+        // }
+        ////end of test////
+        //////////////
+
+        //Has the vacuum been returned to the charger?
+        if(vacButton.isReleased()){
+            elapsedVacTime = elapsedVacTime + (millis()-vacStartTime);
+            Serial.printf("Releaseeeed!\nElapsed Time: %i\n\n", elapsedVacTime);
+            if(elapsedVacTime > 5000){
+                totalDust = 0;
+                totalDustK = 0;
+                elapsedVacTime = 0;
+                previousUnixTime = currentUnixTime;
+                EEPROM.put(timeAddress, currentUnixTime); //log vacuum time
+                vacuumState = NOW_VACUUM_REWARD_READY;
+                lastVacStateTime = millis();
+            } else{
+                vacuumState = STOPPED_EARLY;
+                lastVacStateTime = millis();
+                flashTimer.startTimer(2000);
+            }
+        } 
+
+        
+        if(vacButton.isPressed()){
+            if(isFirstVacuumEdge){
+                vacStartTime = millis();
+                isFirstVacuumEdge = false;
+                vacuumState = NOW_VACUUM_NO_REWARD;
+                lastVacStateTime = millis();
+            }
+        } else{
+            isFirstVacuumEdge = true;
+            vacuumState = CHARGING_YES_DIRTY;
+        }
+
+    } else{
+        vacuumState = CHARGING_NOT_DIRTY;
+        lastVacStateTime = millis();
+    }
+
+
+///Switch Case///
     switch (vacuumState){
         case CHARGING_NOT_DIRTY:
-            fillLEDs(0x000000);
+            // Serial.printf("charging, not dirty\n");
+            fillLEDs(0xFF0000);
             break;
 
         case CHARGING_YES_DIRTY:
+            // Serial.printf("charging, yes dirty\n");
             fillLEDs(0x00FF00);
             break;
 
         case NOW_VACUUM_NO_REWARD:
+            // Serial.printf("Now vacuuming, no reward\n");
             fillLEDs(0xFFFF00);
             break;
 
         case NOW_VACUUM_REWARD_READY:
+            // Serial.printf("Now Vacuuming, reward ready\n");
             if(millis()-lastVacStateTime < 2000){
                 fillLEDs(0x00FFFF);
             } else{
@@ -153,6 +235,7 @@ void loop() {
             break;
 
         case STOPPED_EARLY:
+            // Serial.printf("stopped early\n");
             if(millis()-lastVacStateTime<2000){
                 ////////////Would be nice to make this blinking a function
                 if((millis()-lastVacStateTime)%500<250){
@@ -168,6 +251,7 @@ void loop() {
             break;
 
         case FINISHED_TAKE_REWARD:
+            // Serial.printf("Finished, take reward\n");
             if(millis()-lastVacStateTime <2000){
                 fillLEDs(0xFFFFFF);
             } else{
@@ -178,45 +262,7 @@ void loop() {
 
     }
 
-/////////// CANT QUITE FIGURE OUT HOW TO GO TO DIRTY STATE W/O OVERRIDING OTHER STATES!
-    if((totalDust>MAX_DUST) || (timeSinceVacuumed > MAX_TIME_SINCE_VAC)){
-        fillLEDs(0x00FF00);
-        vacuumState = CHARGING_YES_DIRTY;
 
-        //Has the vacuum been returned to the charger?
-        if(vacButton.isReleased()){
-            elapsedVacTime = elapsedVacTime + (millis()-vacStartTime);
-            Serial.printf("Releaseeeed!\nElapsed Time: %i\n\n", elapsedVacTime);
-            if(elapsedVacTime > 5000){
-                totalDust = 0;
-                elapsedVacTime = 0;
-                previousUnixTime = currentUnixTime;
-                EEPROM.put(timeAddress, currentUnixTime); //log vacuum time
-                vacuumState = NOW_VACUUM_REWARD_READY;
-                lastVacStateTime = millis();
-            } else{
-                vacuumState = STOPPED_EARLY;
-                lastVacStateTime = millis();
-                flashTimer.startTimer(2000);
-            }
-        }
-
-        //Has the vacuum been taken off the charger?
-        if(vacButton.isPressed()){
-            if(isFirstVacuumEdge){
-                vacStartTime = millis();
-                isFirstVacuumEdge = false;
-                vacuumState = NOW_VACUUM_NO_REWARD;
-                lastVacStateTime = millis();
-            }
-        } else{
-            isFirstVacuumEdge = true;
-        }
-
-    } else{
-        fillLEDs(0xFF0000);
-        vacuumState = CHARGING_NOT_DIRTY;
-    }
 
 }
 
