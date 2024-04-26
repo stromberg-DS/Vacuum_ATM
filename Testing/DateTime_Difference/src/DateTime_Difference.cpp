@@ -22,13 +22,16 @@ void timeToBytes(int timeIn, byte *byteZero, byte *byteOne, byte *byteTwo, byte 
 void setup() {
   Serial.begin(9600);
   waitFor(Serial.isConnected, 10000);
-  delay(5000);  //give serial monitor time to settle in
   for (int i=0; i<4; i++){
     timeByte[i] = EEPROM.read(timeByteAddress[i]);
     Serial.printf("timeByte[%i] = %X\n", i, timeByte[i]);
   }
   previousTime = (timeByte[0]<<24) | (timeByte[1]<<16) | (timeByte[2]<<8) | timeByte[3];
   Serial.printf("\nPreviousTime = %i\n\n", previousTime);
+  Serial.printf("Waiting to connect to Particle cloud.");
+  while(!Particle.connected()){
+    Serial.printf(".");
+  }
 }
 
 void loop() {
