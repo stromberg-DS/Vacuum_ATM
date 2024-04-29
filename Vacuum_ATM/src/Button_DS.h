@@ -4,6 +4,7 @@
 class Button{
     int _buttonPin;
     int _prevButtonState;
+    int _prevRButtonState;
     bool _pullUp;
 
     public:
@@ -61,12 +62,12 @@ class Button{
                 _buttonState = !_buttonState;
             }
 
-            if(_buttonState != _prevButtonState){
-                _released = _prevButtonState;
+            if(_buttonState != _prevRButtonState){
+                _released = _prevRButtonState;
             } else{
                 _released = false;
             }
-            _prevButtonState = _buttonState;
+            _prevRButtonState = _buttonState;
 
             return _released;
         }

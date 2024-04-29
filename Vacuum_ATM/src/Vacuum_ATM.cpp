@@ -21,18 +21,29 @@ SYSTEM_THREAD(ENABLED);
 
 const int PIXEL_COUNT = 14;
 const int PUBLISH_TIME = 30000;
+const int RED = 0xFF0000;     //not ready to vacuum
+const int BLUE = 0x0000FF;    //successfully vacuumed!
+const int GREEN = 0x00FF00;   //ready to vacuum
+const int YELLOW = 0xFFFF00;  //currently vacuuming
+const int MAGENTA = 0xFF00FF; //need more vacuuming
+const int WHITE = 255;        //Take a reward!
+const int SERVO_PIN = A5;
 
 //Vacuum States
+int vacuumState;
+int lastVacuumState;
 const int CHARGING_NOT_DIRTY = 0; //red
 const int CHARGING_YES_DIRTY = 1; //green
 const int NOW_VACUUM_NO_REWARD = 2; //yellos
 const int NOW_VACUUM_REWARD_READY =3; //
 const int STOPPED_EARLY = 4;
 const int FINISHED_TAKE_REWARD = 5;
-int vacuumState;
+const String VAC_STATE_STRING[6] = {"Charging, not dirty.", "Charging, dirty", "Vacuuming, reward not ready",
+                                    "Vacuuming, reward ready", "Stopped early", "Finished, take reward"};
 int vacStartTime;
-int elapsedVacTime=0;
-int lastVacStateTime;
+int elapsedVacTime=0;   //total time spent vacuuming
+int prevVacTime = 0;    //previous total time vacuuming
+int lastVacStateTime;   //last time the vacuum state changed
 
 
 const int VACUUMING_TIME = 5000;   //900,000 is 15 min
@@ -61,6 +72,7 @@ void adaPublish();
 void dustToBytes(int dustIn, byte *dustHOut, byte *dustMOut, byte *dustLOut);
 void newDataLEDFlash();
 void fillLEDs(int ledColor, int startLED=0, int lastLED=PIXEL_COUNT);
+void dispenseCoin();
 
 TCPClient TheClient;
 Adafruit_MQTT_SPARK mqtt(&TheClient, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO_KEY);
@@ -70,14 +82,17 @@ Adafruit_MQTT_Publish dustPub = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feed
 // Timer publishTimer(PUBLISH_TIME, adaPublish);
 
 Adafruit_NeoPixel pixel(PIXEL_COUNT, SPI1, WS2812);
-
+Servo myServo;
 Button vacButton(A2);
 IoTTimer flashTimer;
+IoTTimer servoTimer;
 
 void setup() {
     Serial.begin(9600);
     waitFor(Serial.isConnected, 10000);
 
+    myServo.attach(SERVO_PIN);
+    myServo.write(140);
     pixel.begin();
     pixel.setBrightness(20);
     fillLEDs(0x00FFFF);
@@ -85,6 +100,7 @@ void setup() {
     delay(1000);
     fillLEDs(0xFF0000);
     pixel.show();
+    myServo.detach();
 
     Serial.printf("Connecting to Particle cloud...");
     while(!Particle.connected()){
@@ -96,13 +112,6 @@ void setup() {
 
 
     totalDust = EEPROM.get(totalDustAddress, totalDust);
-    if(totalDust>MAX_DUST){
-        vacuumState = CHARGING_YES_DIRTY;
-        lastVacStateTime = millis();
-    } else{
-        vacuumState = CHARGING_NOT_DIRTY;
-        lastVacStateTime = millis();
-    }
 
     // publishTimer.start();
 
@@ -115,16 +124,20 @@ void setup() {
 
 void loop() {
     static int lastPrintTime;
-    static bool isFirstVacuumEdge = true;
     MQTT_connect();
 
     unsigned int timeSinceVacuumed;
     currentUnixTime = Time.now();
     timeSinceVacuumed = currentUnixTime - previousUnixTime;
 
+    if(vacuumState != lastVacuumState){
+        Serial.printf("New Vacuum State:\n  %s\n\n", VAC_STATE_STRING[vacuumState].c_str());
+        lastVacStateTime = millis();    //track when state changes
+        lastVacuumState = vacuumState;
+    }
+
     if(millis()-lastPrintTime > 1000){
-        Serial.printf("TotalDust: %0.2f x1000\n", totalDustK);
-        Serial.printf("TimeSinceVacuumed: %u\n\n", timeSinceVacuumed);
+        Serial.printf("Dust: %i\nTime: %i\nTotal Vac time: %i\n", totalDust, timeSinceVacuumed,elapsedVacTime);
         lastPrintTime = millis();
     }
 
@@ -132,149 +145,81 @@ void loop() {
     newDataLEDFlash();
 
 
+  ////Treat button like real vacuum
+  ////  pressed = vacuum on charger
+  ////  released = taking off charger
+  ////  not pressed = vacuuming
+  ////  clicked = putting back on charger
+  //
+  //If the house is dirty or it has been too long...
+  if((totalDust > MAX_DUST) || (timeSinceVacuumed>MAX_TIME_SINCE_VAC)){
+    fillLEDs(GREEN);
+    vacuumState = CHARGING_YES_DIRTY;
 
-
-    /////////// CANT QUITE FIGURE OUT HOW TO GO TO DIRTY STATE W/O OVERRIDING OTHER STATES!
-    if((totalDust>MAX_DUST) || (timeSinceVacuumed > MAX_TIME_SINCE_VAC)){
-        // vacuumState = CHARGING_YES_DIRTY;
-        lastVacStateTime = millis();
-
-        //////////////////
-        ///Testing a big nested if/////
-        //Is the vacuum returned to charger?
-        // if(vacButton.isReleased()){
-        //     elapsedVacTime = elapsedVacTime + (millis()-vacStartTime);
-        //     Serial.printf("Releaseeeed!\nElapsed Time: %i\n\n", elapsedVacTime);
-        //     //Has the vacuum been used long enough?
-        //     if(elapsedVacTime > 5000){
-        //         totalDust = 0;
-        //         elapsedVacTime = 0;
-        //         previousUnixTime = currentUnixTime;
-        //         EEPROM.put(timeAddress, currentUnixTime); //log vacuum time
-        //         vacuumState = NOW_VACUUM_REWARD_READY;
-        //         lastVacStateTime = millis();
-        //     } else{
-        //         vacuumState = STOPPED_EARLY;
-        //         lastVacStateTime = millis();
-        //         flashTimer.startTimer(2000);
-        //     }
-        // } else if(vacButton.isClicked()){   //When vacuum is removed
-        //     // if(isFirstVacuumEdge){
-        //         vacStartTime = millis();
-        //         isFirstVacuumEdge = false;
-        //         vacuumState = NOW_VACUUM_NO_REWARD;
-        //         lastVacStateTime = millis();
-        //     // }
-        // } else{
-        //     isFirstVacuumEdge = true;
-        //     vacuumState = CHARGING_YES_DIRTY;
-        //     lastVacStateTime = millis();
-        // }
-        ////end of test////
-        //////////////
-
-        //Has the vacuum been returned to the charger?
-        if(vacButton.isReleased()){
-            elapsedVacTime = elapsedVacTime + (millis()-vacStartTime);
-            Serial.printf("Releaseeeed!\nElapsed Time: %i\n\n", elapsedVacTime);
-            if(elapsedVacTime > 5000){
-                totalDust = 0;
-                totalDustK = 0;
-                elapsedVacTime = 0;
-                previousUnixTime = currentUnixTime;
-                EEPROM.put(timeAddress, currentUnixTime); //log vacuum time
-                vacuumState = NOW_VACUUM_REWARD_READY;
-                lastVacStateTime = millis();
-            } else{
-                vacuumState = STOPPED_EARLY;    //I think I'm setting vacuum state here, but...
-                lastVacStateTime = millis();
-                flashTimer.startTimer(2000);
-            }
-        } 
-
-        
-        if(vacButton.isPressed()){
-            if(isFirstVacuumEdge){
-                vacStartTime = millis();
-                isFirstVacuumEdge = false;
-                vacuumState = NOW_VACUUM_NO_REWARD;
-                lastVacStateTime = millis();
-            }
-        } else{
-            isFirstVacuumEdge = true;
-            vacuumState = CHARGING_YES_DIRTY;       //I'm setting it again here later
-        }
-
-    } else{
-        vacuumState = CHARGING_NOT_DIRTY;
-        lastVacStateTime = millis();
+    if(vacButton.isReleased()){      //When vacuum removed
+      vacStartTime = millis();        //set the start vacuum timer
+    }
+    //if you are vacuuming
+    if(!vacButton.isPressed()){
+      elapsedVacTime = prevVacTime+ (millis() - vacStartTime);
+      if(elapsedVacTime > VACUUMING_TIME){  //check if you have vacuumed long enough
+        fillLEDs(BLUE);
+        vacuumState = NOW_VACUUM_REWARD_READY;
+      } else{
+        fillLEDs(YELLOW);
+        vacuumState = NOW_VACUUM_NO_REWARD;
+      }
+    }
+    //If the vacuum is returned
+    if(vacButton.isClicked()){         
+      if(elapsedVacTime > VACUUMING_TIME){  //check if you have vacuumed enough
+        totalDust =0;
+        totalDustK = 0;
+        timeSinceVacuumed = 0;
+        elapsedVacTime =0;
+        prevVacTime = 0;
+        previousUnixTime = currentUnixTime;
+        EEPROM.put(timeAddress, currentUnixTime);   //log last vacuum time in EEPROM
+        vacuumState = FINISHED_TAKE_REWARD;
+        servoTimer.startTimer(2000);
+        fillLEDs(WHITE);
+        dispenseCoin();
+      }else{
+        fillLEDs(GREEN);
+        prevVacTime = elapsedVacTime;
+        vacuumState = STOPPED_EARLY;
+        flashTimer.startTimer(2000);
+      }
     }
 
 
-///Switch Case///
-    switch (vacuumState){
-        case CHARGING_NOT_DIRTY:
-            // Serial.printf("charging, not dirty\n");
-            fillLEDs(0xFF0000);
-            break;
+  }else{
+    fillLEDs(RED); 
+    vacuumState = CHARGING_NOT_DIRTY;
 
-        case CHARGING_YES_DIRTY:
-            // Serial.printf("charging, yes dirty\n");
-            fillLEDs(0x00FF00);
-            break;
-
-        case NOW_VACUUM_NO_REWARD:
-            // Serial.printf("Now vacuuming, no reward\n");
-            fillLEDs(0xFFFF00);
-            break;
-
-        case NOW_VACUUM_REWARD_READY:
-            // Serial.printf("Now Vacuuming, reward ready\n");
-            if(millis()-lastVacStateTime < 2000){
-                fillLEDs(0x00FFFF);
-            } else{
-                vacuumState = FINISHED_TAKE_REWARD;
-                lastVacStateTime = millis();
-            }
-            break;
-
-        case STOPPED_EARLY:
-            // Serial.printf("stopped early\n");
-            if(millis()-lastVacStateTime<2000){
-                ////////////Would be nice to make this blinking a function
-                if((millis()-lastVacStateTime)%500<250){
-                    fillLEDs(0xFF0000);
-                } else{
-                    fillLEDs(0x550000);
-                }
-            }else{
-                fillLEDs(0);
-                vacuumState = CHARGING_YES_DIRTY;
-                lastVacStateTime = millis();
-            }
-            break;
-
-        case FINISHED_TAKE_REWARD:
-            // Serial.printf("Finished, take reward\n");
-            if(millis()-lastVacStateTime <2000){
-                fillLEDs(0xFFFFFF);
-            } else{
-                vacuumState = CHARGING_NOT_DIRTY;
-                lastVacStateTime = millis();
-            }
-            break;
-
-    }
+  }
 
 
 
+
+
+
+    pixel.show();
+}
+
+void dispenseCoin(){
+    myServo.attach(SERVO_PIN);
+    myServo.write(10);
+    delay(500);
+    myServo.write(140);
+    delay(500);
+    myServo.detach();   //turn off so it doesn't make a bunch of noise
 }
 
 void fillLEDs(int ledColor, int startLED, int lastLED){
     for(int i=startLED; i<lastLED; i++){
         pixel.setPixelColor(i, ledColor);
     }
-    pixel.show();
 }
 
 //Wait for new dust data and save it to the EEPROM
