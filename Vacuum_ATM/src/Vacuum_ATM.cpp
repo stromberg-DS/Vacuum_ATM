@@ -84,6 +84,7 @@ Adafruit_MQTT_Publish dustPub = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feed
 Adafruit_NeoPixel pixel(PIXEL_COUNT, SPI1, WS2812);
 Servo myServo;
 Button vacButton(A2);
+Button dialButton(D17);
 IoTTimer flashTimer;
 IoTTimer servoTimer;
 
@@ -95,7 +96,7 @@ void setup() {
     myServo.write(140);
     pixel.begin();
     pixel.setBrightness(20);
-    fillLEDs(0x00FFFF);
+    fillLEDs(0x0000FF);
     pixel.show();
     delay(1000);
     fillLEDs(0xFF0000);
@@ -138,6 +139,7 @@ void loop() {
 
     if(millis()-lastPrintTime > 1000){
         Serial.printf("Dust: %i\nTime: %i\nTotal Vac time: %i\n", totalDust, timeSinceVacuumed,elapsedVacTime);
+        Serial.printf("%i\n\n", digitalRead(D17));
         lastPrintTime = millis();
     }
 
@@ -210,7 +212,10 @@ void loop() {
 void dispenseCoin(){
     myServo.attach(SERVO_PIN);
     myServo.write(10);
-    delay(500);
+    // while(dialButton.isReleased()){
+      
+    // }
+    delay(1500);
     myServo.write(140);
     delay(500);
     myServo.detach();   //turn off so it doesn't make a bunch of noise
