@@ -28,7 +28,7 @@ const int YELLOW = 0xFFFF00;  //currently vacuuming
 const int MAGENTA = 0xFF00FF; //need more vacuuming
 const int WHITE = 255;        //Take a reward!
 const int SERVO_PIN = A5;
-const int HALL_PIN = D17;
+const int CAM_PIN = D18;
 
 //Vacuum States
 int vacuumState;
@@ -74,7 +74,6 @@ void adaPublish();
 void dustToBytes(int dustIn, byte *dustHOut, byte *dustMOut, byte *dustLOut);
 void newDataLEDFlash();
 void fillLEDs(int ledColor, int startLED=0, int lastLED=PIXEL_COUNT);
-void dispenseCoin();
 void moveServo(int position);
 
 TCPClient TheClient;
@@ -87,6 +86,7 @@ Adafruit_MQTT_Publish dustPub = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feed
 Adafruit_NeoPixel pixel(PIXEL_COUNT, SPI1, WS2812);
 Servo myServo;
 Button vacButton(A2);
+Button camButton(CAM_PIN);
 IoTTimer flashTimer;
 IoTTimer servoTimer;
 
@@ -94,12 +94,10 @@ void setup() {
     Serial.begin(9600);
     waitFor(Serial.isConnected, 10000);
 
-    pinMode(HALL_PIN, INPUT_PULLUP);
-
     myServo.attach(SERVO_PIN);
     myServo.write(140);
     pixel.begin();
-    pixel.setBrightness(20);
+    pixel.setBrightness(10);
     fillLEDs(0x0000FF);
     pixel.show();
     delay(1000);
@@ -143,7 +141,7 @@ void loop() {
 
     if(millis()-lastPrintTime > 1000){
         Serial.printf("Dust: %i\nTime: %i\nTotal Vac time: %i\n", totalDust, timeSinceVacuumed,elapsedVacTime);
-        Serial.printf("%i\n\n", digitalRead(HALL_PIN));
+        Serial.printf("%i\n\n", camButton.isPressed());
         lastPrintTime = millis();
     }
 
@@ -204,9 +202,10 @@ void loop() {
   }
 
 if(isReadyToDispense){
-  if(digitalRead(HALL_PIN)){
+  if(camButton.isClicked()){
     moveServo(10);
-  } else{
+  } else if (camButton.isReleased()){
+    isReadyToDispense = false;
     moveServo(140);
   }
 }
@@ -222,14 +221,6 @@ void moveServo(int position){
     myServo.detach();
 }
 
-void dispenseCoin(){
-    myServo.attach(SERVO_PIN);
-    myServo.write(10);
-    delay(1500);
-    myServo.write(140);
-    delay(500);
-    myServo.detach();   //turn off so it doesn't make a bunch of noise
-}
 
 void fillLEDs(int ledColor, int startLED, int lastLED){
     for(int i=startLED; i<lastLED; i++){
