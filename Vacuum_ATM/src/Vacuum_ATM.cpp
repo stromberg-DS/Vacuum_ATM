@@ -28,6 +28,7 @@ const int YELLOW = 0xFFFF00;  //currently vacuuming
 const int MAGENTA = 0xFF00FF; //need more vacuuming
 const int WHITE = 255;        //Take a reward!
 const int SERVO_PIN = A5;
+const int HALL_PIN = D17;
 
 //Vacuum States
 int vacuumState;
@@ -44,6 +45,7 @@ int vacStartTime;
 int elapsedVacTime=0;   //total time spent vacuuming
 int prevVacTime = 0;    //previous total time vacuuming
 int lastVacStateTime;   //last time the vacuum state changed
+bool isReadyToDispense = false; //After vacuum is returned & has been used enough set true
 
 
 const int VACUUMING_TIME = 5000;   //900,000 is 15 min
@@ -73,6 +75,7 @@ void dustToBytes(int dustIn, byte *dustHOut, byte *dustMOut, byte *dustLOut);
 void newDataLEDFlash();
 void fillLEDs(int ledColor, int startLED=0, int lastLED=PIXEL_COUNT);
 void dispenseCoin();
+void moveServo(int position);
 
 TCPClient TheClient;
 Adafruit_MQTT_SPARK mqtt(&TheClient, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO_KEY);
@@ -84,13 +87,14 @@ Adafruit_MQTT_Publish dustPub = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feed
 Adafruit_NeoPixel pixel(PIXEL_COUNT, SPI1, WS2812);
 Servo myServo;
 Button vacButton(A2);
-Button dialButton(D17);
 IoTTimer flashTimer;
 IoTTimer servoTimer;
 
 void setup() {
     Serial.begin(9600);
     waitFor(Serial.isConnected, 10000);
+
+    pinMode(HALL_PIN, INPUT_PULLUP);
 
     myServo.attach(SERVO_PIN);
     myServo.write(140);
@@ -139,7 +143,7 @@ void loop() {
 
     if(millis()-lastPrintTime > 1000){
         Serial.printf("Dust: %i\nTime: %i\nTotal Vac time: %i\n", totalDust, timeSinceVacuumed,elapsedVacTime);
-        Serial.printf("%i\n\n", digitalRead(D17));
+        Serial.printf("%i\n\n", digitalRead(HALL_PIN));
         lastPrintTime = millis();
     }
 
@@ -185,36 +189,42 @@ void loop() {
         vacuumState = FINISHED_TAKE_REWARD;
         servoTimer.startTimer(2000);
         fillLEDs(WHITE);
-        dispenseCoin();
+        isReadyToDispense = true;
       }else{
         fillLEDs(GREEN);
+        isReadyToDispense = false;
         prevVacTime = elapsedVacTime;
         vacuumState = STOPPED_EARLY;
         flashTimer.startTimer(2000);
       }
     }
-
-
   }else{
     fillLEDs(RED); 
     vacuumState = CHARGING_NOT_DIRTY;
-
   }
 
-
-
-
-
+if(isReadyToDispense){
+  if(digitalRead(HALL_PIN)){
+    moveServo(10);
+  } else{
+    moveServo(140);
+  }
+}
 
     pixel.show();
+}
+
+void moveServo(int position){
+    position = constrain(position, 0, 180);
+    myServo.attach(SERVO_PIN);
+    myServo.write(position);
+    delay(500);
+    myServo.detach();
 }
 
 void dispenseCoin(){
     myServo.attach(SERVO_PIN);
     myServo.write(10);
-    // while(dialButton.isReleased()){
-      
-    // }
     delay(1500);
     myServo.write(140);
     delay(500);
