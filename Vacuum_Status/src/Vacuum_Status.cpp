@@ -21,6 +21,7 @@ const int RED_LED_PIN = D1;
 bool isVacCharging;
 bool lastVacState;
 unsigned int stateChangeUnixTime;
+String pubInfoString;
 
 //Functions
 void MQTT_connect();
@@ -48,10 +49,12 @@ void loop() {
     // Serial.printf("Current Vac Status: %i\nPrevious Status: %i\n\n", isVacCharging, lastVacState);
 
     if(isVacCharging != lastVacState){
-        adaPublish();
         Serial.printf("Status changed! Send to adafruit!\nCharging: %i\nCurrent Time: %u\n\n", isVacCharging, stateChangeUnixTime);
         lastVacState = isVacCharging;
         stateChangeUnixTime = Time.now();
+        pubInfoString = String(isVacCharging)+String(stateChangeUnixTime);      //Add current vacuum state onto beginning of string
+        Serial.printf("%s\n\n", pubInfoString.c_str());
+        adaPublish();       //send string to adafruit - contains time when state changed and current state.
     }
 
     // delay(500);
@@ -60,7 +63,7 @@ void loop() {
 //Publish to Adafruit.io
 void adaPublish(){
   if(mqtt.Update()){
-    vacStatus.publish(isVacCharging);
+    vacStatus.publish(pubInfoString);
   }
 }
 
