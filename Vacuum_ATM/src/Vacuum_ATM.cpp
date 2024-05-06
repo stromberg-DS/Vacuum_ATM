@@ -29,6 +29,7 @@ const int MAGENTA = 0xFF00FF; //need more vacuuming
 const int WHITE = 255;        //Take a reward!
 const int SERVO_PIN = A5;
 const int CAM_PIN = D18;
+const int VAC_PIN = A2;
 
 //Vacuum States
 int vacuumState;
@@ -86,7 +87,7 @@ Adafruit_MQTT_Publish dustPub = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feed
 
 Adafruit_NeoPixel pixel(PIXEL_COUNT, SPI1, WS2812);
 Servo myServo;
-Button vacButton(A2);
+Button vacButton(VAC_PIN);
 Button camButton(CAM_PIN);
 IoTTimer flashTimer;
 IoTTimer servoTimer;
