@@ -79,6 +79,7 @@ void moveServo(int position);
 TCPClient TheClient;
 Adafruit_MQTT_SPARK mqtt(&TheClient, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO_KEY);
 Adafruit_MQTT_Subscribe dustSub = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/plantinfo.dustsensor");
+Adafruit_MQTT_Subscribe vacInfoSub = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/vacuumstatus");
 Adafruit_MQTT_Publish dustPub = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/totaldust");
 
 // Timer publishTimer(PUBLISH_TIME, adaPublish);
@@ -119,6 +120,7 @@ void setup() {
     // publishTimer.start();
 
     mqtt.subscribe(&dustSub);
+    mqtt.subscribe(&vacInfoSub);
 
     pinMode(7, OUTPUT);
     digitalWrite(7, LOW);
@@ -231,6 +233,7 @@ void fillLEDs(int ledColor, int startLED, int lastLED){
 //Wait for new dust data and save it to the EEPROM
 void getNewDustData(){
     int incomingDust;
+    String incomingVacInfo;
 
     Adafruit_MQTT_Subscribe *subscription;
     while((subscription = mqtt.readSubscription(100))){
@@ -244,8 +247,15 @@ void getNewDustData(){
             lastRXTime = millis();
             Serial.printf("%0.2fk Dust Particles\n", totalDustK);
             adaPublish();
-        }
+        } else if (subscription == &vacInfoSub){
+            incomingVacInfo = (char *)vacInfoSub.lastread;
+            Serial.printf("vac info incoming\n");
+            Serial.printf("%s\n\n", incomingVacInfo.c_str());
+      }
     }
+
+    
+
 }
 
 
