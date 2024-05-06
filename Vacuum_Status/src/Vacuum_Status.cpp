@@ -37,26 +37,24 @@ Adafruit_MQTT_Publish vacStatus = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/fe
 
 Button vacButton(A2);
 
+void noUglyLEDs();
+void lightRedLED();
+
 void setup() {
     Serial.begin(9600);
     waitFor(Serial.isConnected, 10000);
 
     pinMode(RED_LED_PIN, OUTPUT);
+    pinMode(D7, OUTPUT);
+    digitalWrite(D7, LOW);
 }
 
 void loop() {
     MQTT_connect();
     isVacCharging = vacButton.isPressed();
-    if(isVacCharging){
-        t = millis()/1000.0 + 0.5 ;
-        ledBrightness = 63 * sin(2*M_PI*t/4.0)+73;
-        analogWrite(RED_LED_PIN, ledBrightness);
-    }else{
-        digitalWrite(RED_LED_PIN, 0);
-    }
 
-    // Serial.printf("Current Vac Status: %i\nPrevious Status: %i\n\n", isVacCharging, lastVacState);
-
+    lightRedLED();
+    
     if(isVacCharging != lastVacState){
         Serial.printf("Status changed! Send to adafruit!\nCharging: %i\nCurrent Time: %u\n\n", isVacCharging, stateChangeUnixTime);
         lastVacState = isVacCharging;
@@ -66,7 +64,28 @@ void loop() {
         adaPublish();       //send string to adafruit - contains time when state changed and current state.
     }
 
-    // delay(500);
+    noUglyLEDs();
+}
+
+//Pulse red LED when vacuum is charging
+void lightRedLED(){
+    if(isVacCharging){
+        t = millis()/1000.0 + 0.5 ;
+        ledBrightness = 23 * sin(2*M_PI*t/4.0)+28;
+        analogWrite(RED_LED_PIN, ledBrightness);
+    }else{
+        digitalWrite(RED_LED_PIN, 0);
+    }
+}
+
+//turn off other onboard LEDs
+void noUglyLEDs(){
+    if((millis()>20000)&&(Particle.connected)){
+        RGB.control(true);
+        RGB.brightness(0);
+    } else{
+        RGB.control(false);
+    }
 }
 
 //Publish to Adafruit.io
@@ -85,6 +104,7 @@ void MQTT_connect(){
     if (mqtt.connected()){
         return;
     }
+
 
     Serial.print("Connecting to MQTT... ");
 
