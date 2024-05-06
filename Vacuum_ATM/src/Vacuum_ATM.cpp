@@ -97,7 +97,7 @@ void setup() {
     myServo.attach(SERVO_PIN);
     myServo.write(140);
     pixel.begin();
-    pixel.setBrightness(10);
+    pixel.setBrightness(25);
     fillLEDs(0x0000FF);
     pixel.show();
     delay(1000);
