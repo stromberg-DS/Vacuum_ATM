@@ -11,6 +11,7 @@
 #include <Adafruit_MQTT.h>
 #include "Adafruit_MQTT/Adafruit_MQTT_SPARK.h"
 #include "Adafruit_MQTT/Adafruit_MQTT.h"
+#include <math.h>
 
 
 SYSTEM_MODE(AUTOMATIC);
@@ -22,6 +23,8 @@ bool isVacCharging;
 bool lastVacState;
 unsigned int stateChangeUnixTime;
 String pubInfoString;
+float t;
+float ledBrightness;
 
 //Functions
 void MQTT_connect();
@@ -44,7 +47,13 @@ void setup() {
 void loop() {
     MQTT_connect();
     isVacCharging = vacButton.isPressed();
-    digitalWrite(RED_LED_PIN, isVacCharging);
+    if(isVacCharging){
+        t = millis()/1000.0 + 0.5 ;
+        ledBrightness = 63 * sin(2*M_PI*t/4.0)+73;
+        analogWrite(RED_LED_PIN, ledBrightness);
+    }else{
+        digitalWrite(RED_LED_PIN, 0);
+    }
 
     // Serial.printf("Current Vac Status: %i\nPrevious Status: %i\n\n", isVacCharging, lastVacState);
 
