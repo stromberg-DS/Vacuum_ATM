@@ -29,6 +29,7 @@ float ledBrightness;
 //Functions
 void MQTT_connect();
 void adaPublish();
+bool MQTT_ping();
 
 TCPClient TheClient;
 Adafruit_MQTT_SPARK mqtt(&TheClient, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO_KEY);
@@ -51,6 +52,7 @@ void setup() {
 
 void loop() {
     MQTT_connect();
+    MQTT_ping();
     isVacCharging = vacButton.isPressed();
 
     lightRedLED();
@@ -64,7 +66,7 @@ void loop() {
         adaPublish();       //send string to adafruit - contains time when state changed and current state.
     }
 
-    noUglyLEDs();
+    // noUglyLEDs();
 }
 
 //Pulse red LED when vacuum is charging
@@ -115,4 +117,21 @@ void MQTT_connect(){
         delay(5000);
     }
     Serial.printf("MQTT Connected!\n");
+}
+
+//Keeps the connection open to Adafruit
+bool MQTT_ping() {
+    static unsigned int last;
+    bool pingStatus;
+
+    if ((millis()-last)>120000) {
+        Serial.printf("Pinging MQTT \n");
+        pingStatus = mqtt.ping();
+        if(!pingStatus) {
+        Serial.printf("Disconnecting \n");
+        mqtt.disconnect();
+        }
+        last = millis();
+    }
+    return pingStatus;
 }
