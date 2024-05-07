@@ -47,7 +47,7 @@ int elapsedVacTime=0;   //total time spent vacuuming
 int prevVacTime = 0;    //previous total time vacuuming
 int lastVacStateTime;   //last time the vacuum state changed
 bool isReadyToDispense = false; //After vacuum is returned & has been used enough set true
-
+bool isVacCharging;
 
 const int VACUUMING_TIME = 5000;   //900,000 is 15 min
 const int MAX_DUST = 500;       //3,500,000 - roughly 1 week @500 particles/15 min 
@@ -249,8 +249,14 @@ void getNewDustData(){
             Serial.printf("%0.2fk Dust Particles\n", totalDustK);
             adaPublish();
         } else if (subscription == &vacInfoSub){
+            lastRXTime = millis();
             incomingVacInfo = (char *)vacInfoSub.lastread;
-            Serial.printf("vac info incoming\n");
+            //turn this into just receiving a 1 or 0
+            isVacCharging = atoi(incomingVacInfo.substring(0));
+            //instead of isVacCharging, do someInteger = atoi(incomingInfo);
+            //bit shifting and stuff
+            Serial.printf("isVacCharging: %i\n", isVacCharging);
+            Serial.printf("###vac info incoming###\n");
             Serial.printf("%s\n\n", incomingVacInfo.c_str());
       }
     }
