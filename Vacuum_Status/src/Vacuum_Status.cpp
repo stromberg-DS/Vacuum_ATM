@@ -66,7 +66,7 @@ void loop() {
         adaPublish();       //send string to adafruit - contains time when state changed and current state.
     }
 
-    // noUglyLEDs();
+    noUglyLEDs();  
 }
 
 //Pulse red LED when vacuum is charging
