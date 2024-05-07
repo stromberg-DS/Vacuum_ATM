@@ -60,10 +60,14 @@ void loop() {
     if(isVacCharging != lastVacState){
         Serial.printf("Status changed! Send to adafruit!\nCharging: %i\nCurrent Time: %u\n\n", isVacCharging, stateChangeUnixTime);
         lastVacState = isVacCharging;
-        stateChangeUnixTime = Time.now();
-        pubInfoString = String(isVacCharging)+String(stateChangeUnixTime);      //Add current vacuum state onto beginning of string
-        Serial.printf("%s\n\n", pubInfoString.c_str());
-        adaPublish();       //send string to adafruit - contains time when state changed and current state.
+
+        // I was planning to send vacuum status and time together, but changed my mind
+        // 
+        // stateChangeUnixTime = Time.now();
+        // pubInfoString = String(isVacCharging)+String(stateChangeUnixTime);      //Add current vacuum state onto beginning of string
+        // Serial.printf("%s\n\n", pubInfoString.c_str());
+
+        adaPublish();       //send state to adafruit 
     }
 
     noUglyLEDs();  
@@ -93,7 +97,7 @@ void noUglyLEDs(){
 //Publish to Adafruit.io
 void adaPublish(){
   if(mqtt.Update()){
-    vacStatus.publish(pubInfoString);
+    vacStatus.publish(isVacCharging);
   }
 }
 
