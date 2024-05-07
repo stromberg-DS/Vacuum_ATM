@@ -48,6 +48,8 @@ int prevVacTime = 0;    //previous total time vacuuming
 int lastVacStateTime;   //last time the vacuum state changed
 bool isReadyToDispense = false; //After vacuum is returned & has been used enough set true
 bool isVacCharging;
+unsigned int timeSinceVacuumed;
+
 
 const int VACUUMING_TIME = 5000;   //900,000 is 15 min
 const int MAX_DUST = 500;       //3,500,000 - roughly 1 week @500 particles/15 min 
@@ -66,16 +68,19 @@ int lastRXTime = 0;
 //Time
 unsigned int previousUnixTime;
 unsigned int currentUnixTime;
+unsigned int incomingStateChangeTime;
 time32_t now();
 
 //Functions
 void MQTT_connect();
+bool MQTT_ping();
 void getNewDustData();
 void adaPublish();
 void dustToBytes(int dustIn, byte *dustHOut, byte *dustMOut, byte *dustLOut);
 void newDataLEDFlash();
 void fillLEDs(int ledColor, int startLED=0, int lastLED=PIXEL_COUNT);
 void moveServo(int position);
+void periodicPrint();
 
 TCPClient TheClient;
 Adafruit_MQTT_SPARK mqtt(&TheClient, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO_KEY);
@@ -129,10 +134,9 @@ void setup() {
 }
 
 void loop() {
-    static int lastPrintTime;
     MQTT_connect();
+    MQTT_ping();
 
-    unsigned int timeSinceVacuumed;
     currentUnixTime = Time.now();
     timeSinceVacuumed = currentUnixTime - previousUnixTime;
 
@@ -142,12 +146,7 @@ void loop() {
         lastVacuumState = vacuumState;
     }
 
-    if(millis()-lastPrintTime > 1000){
-        Serial.printf("Dust: %i\nTime: %i\nTotal Vac time: %i\n", totalDust, timeSinceVacuumed,elapsedVacTime);
-        Serial.printf("%i\n\n", camButton.isPressed());
-        lastPrintTime = millis();
-    }
-
+    // periodicPrint();
     getNewDustData();
     newDataLEDFlash();
 
@@ -224,6 +223,15 @@ void moveServo(int position){
     myServo.detach();
 }
 
+void periodicPrint(){
+  static int lastPrintTime;
+
+  if(millis()-lastPrintTime > 1000){
+        Serial.printf("Dust: %i\nTime: %i\nTotal Vac time: %i\n", totalDust, timeSinceVacuumed,elapsedVacTime);
+        Serial.printf("%i\n\n", camButton.isPressed());
+        lastPrintTime = millis();
+    }
+}
 
 void fillLEDs(int ledColor, int startLED, int lastLED){
     for(int i=startLED; i<lastLED; i++){
@@ -246,19 +254,20 @@ void getNewDustData(){
 
             totalDustK = totalDust / 1000.0;    //divide by 1,000 for nicer visualization
             lastRXTime = millis();
-            Serial.printf("%0.2fk Dust Particles\n", totalDustK);
+            Serial.printf("%0.2fk Total Dust Particles\n\n", totalDustK);
             adaPublish();
         } else if (subscription == &vacInfoSub){
             lastRXTime = millis();
+            incomingStateChangeTime = Time.now();
             incomingVacInfo = (char *)vacInfoSub.lastread;
             //turn this into just receiving a 1 or 0
-            isVacCharging = atoi(incomingVacInfo.substring(0));
+            isVacCharging = atoi(incomingVacInfo);
             //instead of isVacCharging, do someInteger = atoi(incomingInfo);
             //bit shifting and stuff
+            Serial.printf("### vac info incoming ###\n");
             Serial.printf("isVacCharging: %i\n", isVacCharging);
-            Serial.printf("###vac info incoming###\n");
-            Serial.printf("%s\n\n", incomingVacInfo.c_str());
-      }
+            Serial.printf("Last Vac state change time: %u\n\n", incomingStateChangeTime);
+        }
     }
 
     
@@ -303,3 +312,19 @@ void MQTT_connect(){
     Serial.printf("MQTT Connected!\n");
 }
 
+//Keeps the connection open to Adafruit
+bool MQTT_ping() {
+    static unsigned int last;
+    bool pingStatus;
+
+    if ((millis()-last)>120000) {
+        Serial.printf("Pinging MQTT \n");
+        pingStatus = mqtt.ping();
+        if(!pingStatus) {
+        Serial.printf("Disconnecting \n");
+        mqtt.disconnect();
+        }
+        last = millis();
+    }
+    return pingStatus;
+}
