@@ -48,6 +48,7 @@ int prevVacTime = 0;    //previous total time vacuuming
 int lastVacStateTime;   //last time the vacuum state changed
 bool isReadyToDispense = false; //After vacuum is returned & has been used enough set true
 bool isVacCharging;
+bool lastVacChargeState;
 unsigned int timeSinceVacuumed;
 
 
@@ -257,6 +258,10 @@ void getNewDustData(){
             Serial.printf("%0.2fk Total Dust Particles\n\n", totalDustK);
             adaPublish();
         } else if (subscription == &vacInfoSub){
+            /////Track Rising/falling edge in here
+            //    I might not have to do much since the
+            //    other photon is tracking rising/falling edges...
+            //    hm....
             lastRXTime = millis();
             incomingStateChangeTime = Time.now();
             incomingVacInfo = (char *)vacInfoSub.lastread;
