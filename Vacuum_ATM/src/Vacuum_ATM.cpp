@@ -105,7 +105,7 @@ void setup() {
     waitFor(Serial.isConnected, 10000);
 
     myServo.attach(SERVO_PIN);
-    myServo.write(140);
+    moveServo(140);
     pixel.begin();
     pixel.setBrightness(25);
     fillLEDs(0x0000FF);
@@ -113,7 +113,6 @@ void setup() {
     delay(1000);
     fillLEDs(0xFF0000);
     pixel.show();
-    myServo.detach();
 
     Serial.printf("Connecting to Particle cloud...");
     while(!Particle.connected()){
@@ -222,10 +221,11 @@ if(isReadyToDispense){
 
 void moveServo(int position){
     position = constrain(position, 0, 180);
-    myServo.attach(SERVO_PIN);
+    // myServo.attach(SERVO_PIN);
     myServo.write(position);
     delay(500);
-    myServo.detach();
+    Serial.printf("!!!!!!!MOVING SERVO: %i!!!!!!!\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n", position);
+    // myServo.detach();
 }
 
 void periodicPrint(){
@@ -267,6 +267,8 @@ void getNewDustData(){
             incomingVacInfo = (char *)vacInfoSub.lastread;
             isVacCharging = atoi(incomingVacInfo);
             
+            //VacStatus Photon only sends chargin/not charging on state change
+            //  so we can assume the below are the rising/falling edge of state change
             isVacReturned = isVacCharging;
             isVacRemoved = !isVacCharging;
 
