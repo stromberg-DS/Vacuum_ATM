@@ -167,7 +167,7 @@ void loop() {
       vacStartTime = millis();        //set the start vacuum timer
     }
     //if you are vacuuming
-    if(!vacButton.isPressed()){
+    if(!isVacCharging){
       elapsedVacTime = prevVacTime+ (millis() - vacStartTime);
       if(elapsedVacTime > VACUUMING_TIME){  //check if you have vacuumed long enough
         fillLEDs(BLUE);
