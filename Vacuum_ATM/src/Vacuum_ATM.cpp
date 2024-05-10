@@ -50,6 +50,8 @@ bool isReadyToDispense = false; //After vacuum is returned & has been used enoug
 bool isVacCharging;
 bool lastVacChargeState;
 unsigned int timeSinceVacuumed;
+bool isVacReturned = 0;
+bool isVacRemoved = 0;
 
 
 const int VACUUMING_TIME = 5000;   //900,000 is 15 min
@@ -163,8 +165,9 @@ void loop() {
     fillLEDs(GREEN);
     vacuumState = CHARGING_YES_DIRTY;
 
-    if(vacButton.isReleased()){      //When vacuum removed
+    if(isVacRemoved){      //When vacuum removed
       vacStartTime = millis();        //set the start vacuum timer
+      isVacRemoved = false;
     }
     //if you are vacuuming
     if(!isVacCharging){
@@ -178,7 +181,8 @@ void loop() {
       }
     }
     //If the vacuum is returned
-    if(vacButton.isClicked()){         
+    if(isVacReturned){         
+      isVacReturned = false;
       if(elapsedVacTime > VACUUMING_TIME){  //check if you have vacuumed enough
         totalDust =0;
         totalDustK = 0;
@@ -258,17 +262,14 @@ void getNewDustData(){
             Serial.printf("%0.2fk Total Dust Particles\n\n", totalDustK);
             adaPublish();
         } else if (subscription == &vacInfoSub){
-            /////Track Rising/falling edge in here
-            //    I might not have to do much since the
-            //    other photon is tracking rising/falling edges...
-            //    hm....
             lastRXTime = millis();
             incomingStateChangeTime = Time.now();
             incomingVacInfo = (char *)vacInfoSub.lastread;
-            //turn this into just receiving a 1 or 0
             isVacCharging = atoi(incomingVacInfo);
-            //instead of isVacCharging, do someInteger = atoi(incomingInfo);
-            //bit shifting and stuff
+            
+            isVacReturned = isVacCharging;
+            isVacRemoved = !isVacCharging;
+
             Serial.printf("### vac info incoming ###\n");
             Serial.printf("isVacCharging: %i\n", isVacCharging);
             Serial.printf("Last Vac state change time: %u\n\n", incomingStateChangeTime);
