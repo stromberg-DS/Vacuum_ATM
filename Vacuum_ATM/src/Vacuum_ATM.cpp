@@ -19,7 +19,11 @@
 SYSTEM_MODE(AUTOMATIC);
 SYSTEM_THREAD(ENABLED);
 
-const int PIXEL_COUNT = 14;
+const int PIXEL_COUNT = 33;
+const int RING_PIXEL_MIN = 1;   //first pixel to light on ring
+const int RING_PIXEL_MAX = 15;  //last pixel on ring
+const int STRIP_PIXEL_MIN = 18; //
+const int STRIP_PIXEL_MAX = 32;
 const int PUBLISH_TIME = 30000;
 const int RED = 0xFF0000;     //not ready to vacuum
 const int BLUE = 0x0000FF;    //successfully vacuumed!
