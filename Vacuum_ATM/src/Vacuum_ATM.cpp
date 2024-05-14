@@ -20,10 +20,9 @@ SYSTEM_MODE(AUTOMATIC);
 SYSTEM_THREAD(ENABLED);
 
 const int PIXEL_COUNT = 33;
-const int RING_PIXEL_MIN = 1;   //first pixel to light on ring
-const int RING_PIXEL_MAX = 15;  //last pixel on ring
-const int STRIP_PIXEL_MIN = 18; //
-const int STRIP_PIXEL_MAX = 32;
+const int RING_PIXEL_MIN = 0;   //first pixel to light on ring
+const int STRIP_PIXEL_MIN = 16; //first pixel on strip
+const int STRIP_PIXEL_MAX = 33; //last pixel on strip
 const int PUBLISH_TIME = 30000;
 const int RED = 0xFF0000;     //not ready to vacuum
 const int BLUE = 0x0000FF;    //successfully vacuumed!
@@ -31,6 +30,7 @@ const int GREEN = 0x00FF00;   //ready to vacuum
 const int YELLOW = 0xFFFF00;  //currently vacuuming
 const int MAGENTA = 0xFF00FF; //need more vacuuming
 const int WHITE = 255;        //Take a reward!
+const int BASLINE_BRIGHTNESS = 25;
 const int SERVO_PIN = A5;
 const int CAM_PIN = D18;
 const int VAC_PIN = A2;
@@ -85,7 +85,8 @@ void getNewDustData();
 void adaPublish();
 void dustToBytes(int dustIn, byte *dustHOut, byte *dustMOut, byte *dustLOut);
 void newDataLEDFlash();
-void fillLEDs(int ledColor, int startLED=0, int lastLED=PIXEL_COUNT);
+void fillLEDs(int ledColor, int startLED=0, int lastLED=PIXEL_COUNT, int brightness=BASLINE_BRIGHTNESS);
+void checkLEDs(int ledColor, int startLED, int lastLED);
 void moveServo(int position);
 void periodicPrint();
 
@@ -111,10 +112,12 @@ void setup() {
     myServo.attach(SERVO_PIN);
     moveServo(140);
     pixel.begin();
-    pixel.setBrightness(25);
-    fillLEDs(0x0000FF);
+    pixel.setBrightness(BASLINE_BRIGHTNESS);
+
+    checkLEDs(0x0000FF, RING_PIXEL_MIN, STRIP_PIXEL_MIN);
+    checkLEDs(0xFF0000, STRIP_PIXEL_MIN, STRIP_PIXEL_MAX);
     pixel.show();
-    delay(1000);
+    delay(250);
     fillLEDs(0xFF0000);
     pixel.show();
 
@@ -165,21 +168,24 @@ void loop() {
   //
   //If the house is dirty or it has been too long...
   if((totalDust > MAX_DUST) || (timeSinceVacuumed>MAX_TIME_SINCE_VAC)){
-    fillLEDs(GREEN);
+    fillLEDs(GREEN, RING_PIXEL_MIN, STRIP_PIXEL_MIN);
+    fillLEDs(RED, STRIP_PIXEL_MIN, STRIP_PIXEL_MAX, 60);
     vacuumState = CHARGING_YES_DIRTY;
 
     if(isVacRemoved){      //When vacuum removed
-      vacStartTime = millis();        //set the start vacuum timer
+      vacStartTime = millis();        //set the start vacuum timer 
       isVacRemoved = false;
     }
     //if you are vacuuming
     if(!isVacCharging){
       elapsedVacTime = prevVacTime+ (millis() - vacStartTime);
       if(elapsedVacTime > VACUUMING_TIME){  //check if you have vacuumed long enough
-        fillLEDs(BLUE);
+        fillLEDs(BLUE, RING_PIXEL_MIN, STRIP_PIXEL_MIN);
+        fillLEDs(0, STRIP_PIXEL_MIN, STRIP_PIXEL_MAX);
         vacuumState = NOW_VACUUM_REWARD_READY;
       } else{
-        fillLEDs(YELLOW);
+        fillLEDs(YELLOW, RING_PIXEL_MIN, STRIP_PIXEL_MIN);
+        fillLEDs(YELLOW, STRIP_PIXEL_MIN, STRIP_PIXEL_MAX, 60);
         vacuumState = NOW_VACUUM_NO_REWARD;
       }
     }
@@ -207,11 +213,14 @@ void loop() {
       }
     }
   }else{
-    fillLEDs(RED); 
+    fillLEDs(RED, RING_PIXEL_MIN, STRIP_PIXEL_MIN);
+    fillLEDs(0, STRIP_PIXEL_MIN, STRIP_PIXEL_MAX);
     vacuumState = CHARGING_NOT_DIRTY;
   }
 
 if(isReadyToDispense){
+  fillLEDs(WHITE, RING_PIXEL_MIN, STRIP_PIXEL_MIN);
+  fillLEDs(0, STRIP_PIXEL_MIN, STRIP_PIXEL_MAX);
   if(camButton.isClicked()){
     moveServo(10);
   } else if (camButton.isReleased()){
@@ -242,9 +251,18 @@ void periodicPrint(){
     }
 }
 
-void fillLEDs(int ledColor, int startLED, int lastLED){
+void fillLEDs(int ledColor, int startLED, int lastLED, int brightness){
     for(int i=startLED; i<lastLED; i++){
         pixel.setPixelColor(i, ledColor);
+    }
+}
+
+void checkLEDs(int ledColor, int startLED, int lastLED){
+  for(int i=startLED; i<lastLED; i++){
+      // pixel.clear();
+      pixel.setPixelColor(i, ledColor);
+      pixel.show();
+      delay(250);
     }
 }
 
