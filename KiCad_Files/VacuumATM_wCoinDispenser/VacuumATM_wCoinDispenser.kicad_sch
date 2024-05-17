@@ -1561,6 +1561,26 @@
 	)
 	(wire
 		(pts
+			(xy 160.02 48.26) (xy 154.94 48.26)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9ce5defb-6951-4d9f-9a09-73c7b2ad4a76")
+	)
+	(wire
+		(pts
+			(xy 160.02 45.72) (xy 146.05 45.72)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ac7c926a-6236-4895-a333-6198912db04f")
+	)
+	(wire
+		(pts
 			(xy 99.06 58.42) (xy 120.65 58.42)
 		)
 		(stroke
@@ -1589,6 +1609,26 @@
 		)
 		(uuid "e4374407-0d30-4a46-867e-f1d6cb7db7f3")
 	)
+	(wire
+		(pts
+			(xy 146.05 45.72) (xy 146.05 53.34)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "f368ef0f-e3e4-44dd-a8e2-4a51b845113b")
+	)
+	(wire
+		(pts
+			(xy 154.94 48.26) (xy 154.94 50.8)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "f7dec6ac-9873-4649-866d-dd5f950f50ce")
+	)
 	(symbol
 		(lib_id "Connector:Screw_Terminal_01x02")
 		(at 173.99 60.96 0)
@@ -1608,7 +1648,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "VacButton"
+		(property "Value" "CamButton"
 			(at 176.53 63.4999 0)
 			(effects
 				(font
@@ -1865,6 +1905,71 @@
 			(project "VacuumATM_wCoinDispenser"
 				(path "/175bafae-da8e-452c-ba6d-56d020edb106"
 					(reference "#PWR04")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 154.94 50.8 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "15a0a5d2-5bc8-434a-936f-df758164354d")
+		(property "Reference" "#PWR011"
+			(at 154.94 57.15 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 154.94 55.118 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 154.94 50.8 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 154.94 50.8 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 154.94 50.8 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "fbeb4f72-0e2f-46eb-b379-ea0f47c0e91e")
+		)
+		(instances
+			(project "VacuumATM_wCoinDispenser"
+				(path "/175bafae-da8e-452c-ba6d-56d020edb106"
+					(reference "#PWR011")
 					(unit 1)
 				)
 			)
@@ -3013,6 +3118,76 @@
 			(project "VacuumATM_wCoinDispenser"
 				(path "/175bafae-da8e-452c-ba6d-56d020edb106"
 					(reference "#PWR01")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Connector:Screw_Terminal_01x02")
+		(at 165.1 45.72 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "f0613d3b-5837-4a5b-9cb6-8b3682c364a9")
+		(property "Reference" "J6"
+			(at 167.64 45.7199 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "ResetButton"
+			(at 167.64 48.2599 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-2_1x02_P5.00mm_Horizontal"
+			(at 165.1 45.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 165.1 45.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Generic screw terminal, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"
+			(at 165.1 45.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "2"
+			(uuid "38bff5e3-781b-4c7c-89f9-9dad69abd848")
+		)
+		(pin "1"
+			(uuid "e6457f4e-652f-49bb-aa84-73974795a71e")
+		)
+		(instances
+			(project "VacuumATM_wCoinDispenser"
+				(path "/175bafae-da8e-452c-ba6d-56d020edb106"
+					(reference "J6")
 					(unit 1)
 				)
 			)
