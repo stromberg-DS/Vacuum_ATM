@@ -20,19 +20,26 @@ SYSTEM_MODE(AUTOMATIC);
 SYSTEM_THREAD(ENABLED);
 
 const int PIXEL_COUNT = 33;
-const int RING_PIXEL_MIN = 0;   //first pixel to light on ring
+const int RING_PIXEL_MIN = 1;   //first pixel to light on ring
+const int RING_PIXEL_MAX = 15;
 const int STRIP_PIXEL_MIN = 16; //first pixel on strip
 const int STRIP_PIXEL_MAX = 33; //last pixel on strip
 const int PUBLISH_TIME = 30000;
 const int RED = 0xFF0000;     //not ready to vacuum
+const int REDDISH_RING = 0x991100;
+const int REDDISH_STRIP = 0xFF2200;
+const int YELLOWISH_RING = 0x553300;
+const int MAGENTAISH_RING = 0x220533;
 const int BLUE = 0x0000FF;    //successfully vacuumed!
 const int GREEN = 0x00FF00;   //ready to vacuum
 const int YELLOW = 0xFFFF00;  //currently vacuuming
 const int MAGENTA = 0xFF00FF; //need more vacuuming
-const int WHITE = 255;        //Take a reward!
-const int BASLINE_BRIGHTNESS = 25;
+const int WHITE = 0xFFFFFF;        //Take a reward!
+const int BASELINE_BRIGHTNESS = 50;
 const int SERVO_PIN = A5;
-const int CAM_PIN = D18;
+const int SERVO_CLOSED = 140; //door is closed
+const int SERVO_OPEN = 10;
+const int CAM_PIN = D3;     //changed from D18 - my PCB is weird and D18 is connected to A5. BAD!
 const int VAC_PIN = A2;
 
 //Vacuum States
@@ -40,7 +47,7 @@ int vacuumState;
 int lastVacuumState;
 const int CHARGING_NOT_DIRTY = 0; //red
 const int CHARGING_YES_DIRTY = 1; //green
-const int NOW_VACUUM_NO_REWARD = 2; //yellos
+const int NOW_VACUUM_NO_REWARD = 2; //yellow
 const int NOW_VACUUM_REWARD_READY =3; //
 const int STOPPED_EARLY = 4;
 const int FINISHED_TAKE_REWARD = 5;
@@ -58,9 +65,9 @@ bool isVacReturned = 0;
 bool isVacRemoved = 0;
 
 
-const int VACUUMING_TIME = 5000;   //900,000 is 15 min
-const int MAX_DUST = 500;       //3,500,000 - roughly 1 week @500 particles/15 min 
-const int MAX_TIME_SINCE_VAC = 30;            //1,209,600sec = 14 days
+const int VACUUMING_TIME = 900000;   //900,000 is 15 min
+const int MAX_DUST = 3500000;       //3,500,000 - roughly 1 week @500 particles/15 min 
+const int MAX_TIME_SINCE_VAC = 1209600;            //time in seconds - 1,209,600sec = 14 days
 
 //EEPROM Setup
 int len = EEPROM.length();
@@ -71,6 +78,8 @@ bool isLEDOn = false;
 unsigned int totalDust = 0; //4 bytes - 
 float totalDustK = 0;
 int lastRXTime = 0;
+int ringLEDDustLevel = 0;
+int ringVacTimeLevel = 0;
 
 //Time
 unsigned int previousUnixTime;
@@ -85,7 +94,8 @@ void getNewDustData();
 void adaPublish();
 void dustToBytes(int dustIn, byte *dustHOut, byte *dustMOut, byte *dustLOut);
 void newDataLEDFlash();
-void fillLEDs(int ledColor, int startLED=0, int lastLED=PIXEL_COUNT, int brightness=BASLINE_BRIGHTNESS);
+void fillLEDs(int ledColor, int startLED=0, int lastLED=PIXEL_COUNT);
+void breatheLEDs(int ledColor, int startLED=0, int lastLED=PIXEL_COUNT);
 void checkLEDs(int ledColor, int startLED, int lastLED);
 void moveServo(int position);
 void periodicPrint();
@@ -110,16 +120,18 @@ void setup() {
     waitFor(Serial.isConnected, 10000);
 
     myServo.attach(SERVO_PIN);
-    moveServo(140);
+    moveServo(SERVO_CLOSED);
     pixel.begin();
-    pixel.setBrightness(BASLINE_BRIGHTNESS);
+    pixel.setBrightness(BASELINE_BRIGHTNESS);
 
-    checkLEDs(0x0000FF, RING_PIXEL_MIN, STRIP_PIXEL_MIN);
-    checkLEDs(0xFF0000, STRIP_PIXEL_MIN, STRIP_PIXEL_MAX);
+    checkLEDs(0x000099, RING_PIXEL_MAX, RING_PIXEL_MIN);
+    checkLEDs(0, RING_PIXEL_MAX, RING_PIXEL_MIN);
+
+    checkLEDs(0xFF0000, STRIP_PIXEL_MAX, STRIP_PIXEL_MIN);
+    checkLEDs(0, STRIP_PIXEL_MAX, STRIP_PIXEL_MIN);
+    pixel.clear();
     pixel.show();
-    delay(250);
-    fillLEDs(0xFF0000);
-    pixel.show();
+
 
     Serial.printf("Connecting to Particle cloud...");
     while(!Particle.connected()){
@@ -131,7 +143,10 @@ void setup() {
 
 
     totalDust = EEPROM.get(totalDustAddress, totalDust);
-
+    ringLEDDustLevel = map(totalDust, 0, MAX_DUST, RING_PIXEL_MAX, RING_PIXEL_MIN);
+    ringLEDDustLevel = constrain(ringLEDDustLevel, RING_PIXEL_MIN, RING_PIXEL_MAX);
+    fillLEDs(0x330000, RING_PIXEL_MIN, ringLEDDustLevel);
+    pixel.show();
     // publishTimer.start();
 
     mqtt.subscribe(&dustSub);
@@ -168,9 +183,16 @@ void loop() {
   //
   //If the house is dirty or it has been too long...
   if((totalDust > MAX_DUST) || (timeSinceVacuumed>MAX_TIME_SINCE_VAC)){
-    fillLEDs(GREEN, RING_PIXEL_MIN, STRIP_PIXEL_MIN);
-    fillLEDs(RED, STRIP_PIXEL_MIN, STRIP_PIXEL_MAX, 60);
+    ringVacTimeLevel = map(elapsedVacTime, 0, VACUUMING_TIME, RING_PIXEL_MAX, RING_PIXEL_MIN);
+    ringVacTimeLevel = constrain(ringVacTimeLevel, RING_PIXEL_MIN, RING_PIXEL_MAX);
+    fillLEDs(REDDISH_RING, RING_PIXEL_MIN, RING_PIXEL_MAX);
+    fillLEDs(MAGENTAISH_RING, ringVacTimeLevel, RING_PIXEL_MAX);
+    fillLEDs(REDDISH_STRIP, STRIP_PIXEL_MIN, STRIP_PIXEL_MAX);
+
+    // fillLEDs(REDDISH_RING, RING_PIXEL_MIN, RING_PIXEL_MAX);
+    // fillLEDs(REDDISH_STRIP, STRIP_PIXEL_MIN, STRIP_PIXEL_MAX);
     vacuumState = CHARGING_YES_DIRTY;
+
 
     if(isVacRemoved){      //When vacuum removed
       vacStartTime = millis();        //set the start vacuum timer 
@@ -179,13 +201,16 @@ void loop() {
     //if you are vacuuming
     if(!isVacCharging){
       elapsedVacTime = prevVacTime+ (millis() - vacStartTime);
+      // ringVacTimeLevel = map(elapsedVacTime, 0, VACUUMING_TIME, RING_PIXEL_MAX, RING_PIXEL_MIN);
+      // ringVacTimeLevel = constrain(ringVacTimeLevel, RING_PIXEL_MIN, RING_PIXEL_MAX);
       if(elapsedVacTime > VACUUMING_TIME){  //check if you have vacuumed long enough
-        fillLEDs(BLUE, RING_PIXEL_MIN, STRIP_PIXEL_MIN);
+        fillLEDs(MAGENTAISH_RING, RING_PIXEL_MIN, RING_PIXEL_MAX);
         fillLEDs(0, STRIP_PIXEL_MIN, STRIP_PIXEL_MAX);
         vacuumState = NOW_VACUUM_REWARD_READY;
       } else{
-        fillLEDs(YELLOW, RING_PIXEL_MIN, STRIP_PIXEL_MIN);
-        fillLEDs(YELLOW, STRIP_PIXEL_MIN, STRIP_PIXEL_MAX, 60);
+        // fillLEDs(REDDISH_RING, RING_PIXEL_MIN, RING_PIXEL_MAX);
+        // fillLEDs(0x553300, ringVacTimeLevel, RING_PIXEL_MAX);
+        // fillLEDs(REDDISH_STRIP, STRIP_PIXEL_MIN, STRIP_PIXEL_MAX);
         vacuumState = NOW_VACUUM_NO_REWARD;
       }
     }
@@ -201,31 +226,33 @@ void loop() {
         previousUnixTime = currentUnixTime;
         EEPROM.put(timeAddress, currentUnixTime);   //log last vacuum time in EEPROM
         vacuumState = FINISHED_TAKE_REWARD;
-        servoTimer.startTimer(2000);
-        fillLEDs(WHITE);
         isReadyToDispense = true;
       }else{
-        fillLEDs(GREEN);
         isReadyToDispense = false;
         prevVacTime = elapsedVacTime;
         vacuumState = STOPPED_EARLY;
         flashTimer.startTimer(2000);
       }
     }
-  }else{
-    fillLEDs(RED, RING_PIXEL_MIN, STRIP_PIXEL_MIN);
-    fillLEDs(0, STRIP_PIXEL_MIN, STRIP_PIXEL_MAX);
+  }else{    //If the house is not dirty enough
+
+    pixel.clear();
+    fillLEDs(0x553300, RING_PIXEL_MIN, RING_PIXEL_MAX);
+    fillLEDs(REDDISH_RING, ringLEDDustLevel, RING_PIXEL_MAX);
     vacuumState = CHARGING_NOT_DIRTY;
   }
 
 if(isReadyToDispense){
-  fillLEDs(WHITE, RING_PIXEL_MIN, STRIP_PIXEL_MIN);
+  fillLEDs(0x443322, RING_PIXEL_MIN, RING_PIXEL_MAX);
   fillLEDs(0, STRIP_PIXEL_MIN, STRIP_PIXEL_MAX);
   if(camButton.isClicked()){
-    moveServo(10);
+    moveServo(SERVO_OPEN);
+    Serial.printf("Door opening - cam clicked\n");
   } else if (camButton.isReleased()){
     isReadyToDispense = false;
-    moveServo(140);
+    moveServo(SERVO_CLOSED);
+    ringLEDDustLevel = RING_PIXEL_MAX;
+    pixel.clear();
   }
 }
 
@@ -234,35 +261,39 @@ if(isReadyToDispense){
 
 void moveServo(int position){
     position = constrain(position, 0, 180);
-    // myServo.attach(SERVO_PIN);
     myServo.write(position);
     delay(500);
-    Serial.printf("!!!!!!!MOVING SERVO: %i!!!!!!!\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n", position);
-    // myServo.detach();
+    // Serial.printf("!!!!!!!MOVING SERVO: %i!!!!!!!\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n", position);
 }
 
 void periodicPrint(){
   static int lastPrintTime;
 
   if(millis()-lastPrintTime > 1000){
-        Serial.printf("Dust: %i\nTime: %i\nTotal Vac time: %i\n", totalDust, timeSinceVacuumed,elapsedVacTime);
-        Serial.printf("%i\n\n", camButton.isPressed());
+        // Serial.printf("Dust: %i\nTime: %i\nTotal Vac time: %i\n", totalDust, timeSinceVacuumed,elapsedVacTime);
+        Serial.printf("CamButton: %i\n\n", camButton.isPressed());
         lastPrintTime = millis();
     }
 }
 
-void fillLEDs(int ledColor, int startLED, int lastLED, int brightness){
+void fillLEDs(int ledColor, int startLED, int lastLED){
+  if(startLED < lastLED){
     for(int i=startLED; i<lastLED; i++){
         pixel.setPixelColor(i, ledColor);
     }
+  }
+}
+
+void breatheLEDs(int ledColor, int startLED, int lastLED){
+
 }
 
 void checkLEDs(int ledColor, int startLED, int lastLED){
-  for(int i=startLED; i<lastLED; i++){
+  for(int i=startLED; i>lastLED; i--){
       // pixel.clear();
       pixel.setPixelColor(i, ledColor);
       pixel.show();
-      delay(250);
+      delay(50);
     }
 }
 
@@ -279,6 +310,9 @@ void getNewDustData(){
             totalDust = totalDust + incomingDust;
             EEPROM.put(totalDustAddress, totalDust);
 
+            ringLEDDustLevel = map(totalDust, 0, MAX_DUST, RING_PIXEL_MAX, RING_PIXEL_MIN);
+            ringLEDDustLevel = constrain(ringLEDDustLevel, RING_PIXEL_MIN, RING_PIXEL_MAX);
+            Serial.printf("Ring LED #%i\n\n", ringLEDDustLevel);
             totalDustK = totalDust / 1000.0;    //divide by 1,000 for nicer visualization
             lastRXTime = millis();
             Serial.printf("%0.2fk Total Dust Particles\n\n", totalDustK);
