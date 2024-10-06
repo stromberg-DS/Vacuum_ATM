@@ -65,8 +65,8 @@ bool isVacReturned = 0;
 bool isVacRemoved = 0;
 
 
-const int VACUUMING_TIME = 900000;   //900,000 is 15 min
-const int MAX_DUST = 3500000;       //3,500,000 - roughly 1 week @500 particles/15 min 
+const int VACUUMING_TIME = 600000;   //900,000 is 15 min, 600,000 = 10 min
+const int MAX_DUST = 3000000;       //3,500,000 - roughly 1 week @500 particles/15 min 
 const int MAX_TIME_SINCE_VAC = 1209600;            //time in seconds - 1,209,600sec = 14 days
 
 //EEPROM Setup
