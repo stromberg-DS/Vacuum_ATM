@@ -76,7 +76,7 @@ void loop() {
 //Pulse red LED when vacuum is charging
 void lightRedLED(){
     if(isVacCharging){
-        t = millis()/1000.0 + 0.5 ;
+        t = fmod((millis()/1000.0 + 0.5), 4.0) ;         //Keeps T between 0.0-4.0 to make calculation easier.
         ledBrightness = 23 * sin(2*M_PI*t/4.0)+28;
         analogWrite(RED_LED_PIN, ledBrightness);
     }else{
