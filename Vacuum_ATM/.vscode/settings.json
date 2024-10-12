@@ -4,5 +4,6 @@
     "files.associations": {
         "*.ino": "cpp"
     },
-    "particle.targetDevice": "Vacuum_ATM"
+    "particle.targetDevice": "Vacuum_ATM",
+    "particle.firmwareVersion": "5.8.0"
 }

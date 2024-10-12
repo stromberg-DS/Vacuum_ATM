@@ -29,7 +29,7 @@ const int RED = 0xFF0000;     //not ready to vacuum
 const int REDDISH_RING = 0x991100;
 const int REDDISH_STRIP = 0xFF2200;
 const int YELLOWISH_RING = 0x553300;
-const int MAGENTAISH_RING = 0x220533;
+const int GREENISH_RING = 0X15fe09;
 const int BLUE = 0x0000FF;    //successfully vacuumed!
 const int GREEN = 0x00FF00;   //ready to vacuum
 const int YELLOW = 0xFFFF00;  //currently vacuuming
@@ -186,7 +186,7 @@ void loop() {
     ringVacTimeLevel = map(elapsedVacTime, 0, VACUUMING_TIME, RING_PIXEL_MAX, RING_PIXEL_MIN);
     ringVacTimeLevel = constrain(ringVacTimeLevel, RING_PIXEL_MIN, RING_PIXEL_MAX);
     fillLEDs(REDDISH_RING, RING_PIXEL_MIN, RING_PIXEL_MAX);
-    fillLEDs(MAGENTAISH_RING, ringVacTimeLevel, RING_PIXEL_MAX);
+    fillLEDs(GREENISH_RING, ringVacTimeLevel, RING_PIXEL_MAX);
     fillLEDs(REDDISH_STRIP, STRIP_PIXEL_MIN, STRIP_PIXEL_MAX);
 
     // fillLEDs(REDDISH_RING, RING_PIXEL_MIN, RING_PIXEL_MAX);
@@ -204,7 +204,7 @@ void loop() {
       // ringVacTimeLevel = map(elapsedVacTime, 0, VACUUMING_TIME, RING_PIXEL_MAX, RING_PIXEL_MIN);
       // ringVacTimeLevel = constrain(ringVacTimeLevel, RING_PIXEL_MIN, RING_PIXEL_MAX);
       if(elapsedVacTime > VACUUMING_TIME){  //check if you have vacuumed long enough
-        fillLEDs(MAGENTAISH_RING, RING_PIXEL_MIN, RING_PIXEL_MAX);
+        fillLEDs(GREENISH_RING, RING_PIXEL_MIN, RING_PIXEL_MAX);
         fillLEDs(0, STRIP_PIXEL_MIN, STRIP_PIXEL_MAX);
         vacuumState = NOW_VACUUM_REWARD_READY;
       } else{
