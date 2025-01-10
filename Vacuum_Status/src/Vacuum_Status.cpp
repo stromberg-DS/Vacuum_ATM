@@ -48,9 +48,13 @@ void setup() {
     pinMode(RED_LED_PIN, OUTPUT);
     pinMode(D7, OUTPUT);
     digitalWrite(D7, LOW);
+
+    Watchdog.init(WatchdogConfiguration().timeout(600s));   //Set watchdog timer to 5 min
+    Watchdog.start();
 }
 
 void loop() {
+    Watchdog.refresh();     //Watchdog timer checks in every loop
     MQTT_connect();
     MQTT_ping();
     isVacCharging = vacButton.isPressed();
