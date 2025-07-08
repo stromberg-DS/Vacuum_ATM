@@ -119,6 +119,9 @@ void setup() {
     Serial.begin(9600);
     waitFor(Serial.isConnected, 10000);
 
+    Watchdog.init(WatchdogConfiguration().timeout(600s));     //Set watchdog timer to 5 min
+    Watchdog.start();                                         //Start watchdog timer
+
     myServo.attach(SERVO_PIN);
     moveServo(SERVO_CLOSED);
     pixel.begin();
@@ -158,6 +161,7 @@ void setup() {
 }
 
 void loop() {
+  Watchdog.refresh();
     MQTT_connect();
     MQTT_ping();
 
