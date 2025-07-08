@@ -7,16 +7,16 @@
 */
 
 #include "Particle.h"
-#include <Adafruit_MQTT.h>
-#include "Adafruit_MQTT/Adafruit_MQTT_SPARK.h"
-#include "Adafruit_MQTT/Adafruit_MQTT.h"
+// #include <Adafruit_MQTT.h>
+// #include "Adafruit_MQTT/Adafruit_MQTT_SPARK.h"
+// #include "Adafruit_MQTT/Adafruit_MQTT.h"
 #include "credentials.h"
 #include <neopixel.h>
 #include "Button_DS.h"
 #include "Timer_DS.h"
 
 
-SYSTEM_MODE(AUTOMATIC);
+SYSTEM_MODE(MANUAL);
 SYSTEM_THREAD(ENABLED);
 
 const int PIXEL_COUNT = 33;
@@ -88,23 +88,23 @@ unsigned int incomingStateChangeTime;
 time32_t now();
 
 //Functions
-void MQTT_connect();
-bool MQTT_ping();
-void getNewDustData();
-void adaPublish();
+// void MQTT_connect();
+// bool MQTT_ping();
+// void getNewDustData();
+// void adaPublish();
 void dustToBytes(int dustIn, byte *dustHOut, byte *dustMOut, byte *dustLOut);
-void newDataLEDFlash();
+// void newDataLEDFlash();
 void fillLEDs(int ledColor, int startLED=0, int lastLED=PIXEL_COUNT);
 void breatheLEDs(int ledColor, int startLED=0, int lastLED=PIXEL_COUNT);
 void checkLEDs(int ledColor, int startLED, int lastLED);
 void moveServo(int position);
 void periodicPrint();
 
-TCPClient TheClient;
-Adafruit_MQTT_SPARK mqtt(&TheClient, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO_KEY);
-Adafruit_MQTT_Subscribe dustSub = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/plantinfo.dustsensor");
-Adafruit_MQTT_Subscribe vacInfoSub = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/vacuumstatus");
-Adafruit_MQTT_Publish dustPub = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/totaldust");
+// TCPClient TheClient;
+// Adafruit_MQTT_SPARK mqtt(&TheClient, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO_KEY);
+// Adafruit_MQTT_Subscribe dustSub = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/plantinfo.dustsensor");
+// Adafruit_MQTT_Subscribe vacInfoSub = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/vacuumstatus");
+// Adafruit_MQTT_Publish dustPub = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/totaldust");
 
 // Timer publishTimer(PUBLISH_TIME, adaPublish);
 
@@ -112,6 +112,10 @@ Adafruit_NeoPixel pixel(PIXEL_COUNT, SPI1, WS2812);
 Servo myServo;
 Button vacButton(VAC_PIN);
 Button camButton(CAM_PIN);
+//////////////BELOW KINDA WORKS BUT THERE ARE SOME WEIRD READINGS///////
+/////////CHECK FOR WEIRDNESS ON THE PCB//////
+Button demoButton(D18);
+/////////
 IoTTimer flashTimer;
 IoTTimer servoTimer;
 
@@ -136,24 +140,27 @@ void setup() {
     pixel.show();
 
 
-    Serial.printf("Connecting to Particle cloud...");
-    while(!Particle.connected()){
-        //wait to connect to particle cloud
-    }
+    // Serial.printf("Connecting to Particle cloud...");
+    // while(!Particle.connected()){
+    //     //wait to connect to particle cloud
+    // }
 
     previousUnixTime = EEPROM.get(timeAddress, previousUnixTime);
     Serial.printf("PreviousTime: %u\n\n", previousUnixTime);
 
 
     totalDust = EEPROM.get(totalDustAddress, totalDust);
+    totalDust = 0;  //For Demo Mode
+    vacuumState = CHARGING_NOT_DIRTY; //start with no dust
+    lastVacuumState = CHARGING_NOT_DIRTY;
     ringLEDDustLevel = map(totalDust, 0, MAX_DUST, RING_PIXEL_MAX, RING_PIXEL_MIN);
     ringLEDDustLevel = constrain(ringLEDDustLevel, RING_PIXEL_MIN, RING_PIXEL_MAX);
     fillLEDs(0x330000, RING_PIXEL_MIN, ringLEDDustLevel);
     pixel.show();
     // publishTimer.start();
 
-    mqtt.subscribe(&dustSub);
-    mqtt.subscribe(&vacInfoSub);
+    // mqtt.subscribe(&dustSub);
+    // mqtt.subscribe(&vacInfoSub);
 
     pinMode(7, OUTPUT);
     digitalWrite(7, LOW);
@@ -162,8 +169,8 @@ void setup() {
 
 void loop() {
   Watchdog.refresh();
-    MQTT_connect();
-    MQTT_ping();
+    // MQTT_connect();
+    // MQTT_ping();
 
     currentUnixTime = Time.now();
     timeSinceVacuumed = currentUnixTime - previousUnixTime;
@@ -174,9 +181,13 @@ void loop() {
         lastVacuumState = vacuumState;
     }
 
+    // int pressedCheck = demoButton.isPressed();
+    Serial.printf("demoButton isPressed: %i\n\n", demoButton.isPressed());
+    delay(500);
+
     // periodicPrint();
-    getNewDustData();
-    newDataLEDFlash();
+    // getNewDustData();
+    // newDataLEDFlash();
 
 
   ////Treat button like real vacuum
@@ -186,7 +197,7 @@ void loop() {
   ////  clicked = putting back on charger
   //
   //If the house is dirty or it has been too long...
-  if((totalDust > MAX_DUST) || (timeSinceVacuumed>MAX_TIME_SINCE_VAC)){
+  if((totalDust > MAX_DUST)){
     ringVacTimeLevel = map(elapsedVacTime, 0, VACUUMING_TIME, RING_PIXEL_MAX, RING_PIXEL_MIN);
     ringVacTimeLevel = constrain(ringVacTimeLevel, RING_PIXEL_MIN, RING_PIXEL_MAX);
     fillLEDs(REDDISH_RING, RING_PIXEL_MIN, RING_PIXEL_MAX);
@@ -301,98 +312,98 @@ void checkLEDs(int ledColor, int startLED, int lastLED){
     }
 }
 
-//Wait for new dust data and save it to the EEPROM
-void getNewDustData(){
-    int incomingDust;
-    String incomingVacInfo;
+// //Wait for new dust data and save it to the EEPROM
+// void getNewDustData(){
+//     int incomingDust;
+//     String incomingVacInfo;
 
-    Adafruit_MQTT_Subscribe *subscription;
-    while((subscription = mqtt.readSubscription(100))){
-        if(subscription == &dustSub){
-            incomingDust = strtol((char *)dustSub.lastread,NULL,10);
-            Serial.printf("Int incoming dust: %i\n", incomingDust);
-            totalDust = totalDust + incomingDust;
-            EEPROM.put(totalDustAddress, totalDust);
+//     Adafruit_MQTT_Subscribe *subscription;
+//     while((subscription = mqtt.readSubscription(100))){
+//         if(subscription == &dustSub){
+//             incomingDust = strtol((char *)dustSub.lastread,NULL,10);
+//             Serial.printf("Int incoming dust: %i\n", incomingDust);
+//             totalDust = totalDust + incomingDust;
+//             EEPROM.put(totalDustAddress, totalDust);
 
-            ringLEDDustLevel = map(totalDust, 0, MAX_DUST, RING_PIXEL_MAX, RING_PIXEL_MIN);
-            ringLEDDustLevel = constrain(ringLEDDustLevel, RING_PIXEL_MIN, RING_PIXEL_MAX);
-            Serial.printf("Ring LED #%i\n\n", ringLEDDustLevel);
-            totalDustK = totalDust / 1000.0;    //divide by 1,000 for nicer visualization
-            lastRXTime = millis();
-            Serial.printf("%0.2fk Total Dust Particles\n\n", totalDustK);
-            adaPublish();
-        } else if (subscription == &vacInfoSub){
-            lastRXTime = millis();
-            incomingStateChangeTime = Time.now();
-            incomingVacInfo = (char *)vacInfoSub.lastread;
-            isVacCharging = atoi(incomingVacInfo);
+//             ringLEDDustLevel = map(totalDust, 0, MAX_DUST, RING_PIXEL_MAX, RING_PIXEL_MIN);
+//             ringLEDDustLevel = constrain(ringLEDDustLevel, RING_PIXEL_MIN, RING_PIXEL_MAX);
+//             Serial.printf("Ring LED #%i\n\n", ringLEDDustLevel);
+//             totalDustK = totalDust / 1000.0;    //divide by 1,000 for nicer visualization
+//             lastRXTime = millis();
+//             Serial.printf("%0.2fk Total Dust Particles\n\n", totalDustK);
+//             adaPublish();
+//         } else if (subscription == &vacInfoSub){
+//             lastRXTime = millis();
+//             incomingStateChangeTime = Time.now();
+//             incomingVacInfo = (char *)vacInfoSub.lastread;
+//             isVacCharging = atoi(incomingVacInfo);
             
-            //VacStatus Photon only sends chargin/not charging on state change
-            //  so we can assume the below are the rising/falling edge of state change
-            isVacReturned = isVacCharging;
-            isVacRemoved = !isVacCharging;
+//             //VacStatus Photon only sends chargin/not charging on state change
+//             //  so we can assume the below are the rising/falling edge of state change
+//             isVacReturned = isVacCharging;
+//             isVacRemoved = !isVacCharging;
 
-            Serial.printf("### vac info incoming ###\n");
-            Serial.printf("isVacCharging: %i\n", isVacCharging);
-            Serial.printf("Last Vac state change time: %u\n\n", incomingStateChangeTime);
-        }
-    }
+//             Serial.printf("### vac info incoming ###\n");
+//             Serial.printf("isVacCharging: %i\n", isVacCharging);
+//             Serial.printf("Last Vac state change time: %u\n\n", incomingStateChangeTime);
+//         }
+//     }
 
     
 
-}
+// }
 
 
-//Flash onboard LED when new data comes in
-void newDataLEDFlash(){
-    if(millis() - lastRXTime <500){
-        digitalWrite(7, HIGH);  
-    } else{
-        digitalWrite(7, LOW);
-    }
-}
+// //Flash onboard LED when new data comes in
+// void newDataLEDFlash(){
+//     if(millis() - lastRXTime <500){
+//         digitalWrite(7, HIGH);  
+//     } else{
+//         digitalWrite(7, LOW);
+//     }
+// }
 
-//Publish to Adafruit.io - dust is divided by 1,000 for legibility
-void adaPublish(){
-  if(mqtt.Update()){
-    dustPub.publish(totalDustK);
-  }
-}
+// //Publish to Adafruit.io - dust is divided by 1,000 for legibility
+// void adaPublish(){
+//   if(mqtt.Update()){
+//     dustPub.publish(totalDustK);
+//   }
+// }
 
-// Function to connect and reconnect as necessary to the MQTT server.
-// Should be called in the loop function and it will take care of connecting.
-void MQTT_connect(){
-    int8_t ret;
+// // Function to connect and reconnect as necessary to the MQTT server.
+// // Should be called in the loop function and it will take care of connecting.
+// void MQTT_connect(){
+//     int8_t ret;
 
-    // Return if already connected.
-    if (mqtt.connected()){
-        return;
-    }
+//     // Return if already connected.
+//     if (mqtt.connected()){
+//         return;
+//     }
 
-    Serial.print("Connecting to MQTT... ");
+//     Serial.print("Connecting to MQTT... ");
 
-    while((ret = mqtt.connect()) != 0){
-        Serial.printf("Error Code %s\n", mqtt.connectErrorString(ret));
-        Serial.printf("Retrying MQTT connection in 5 seconds...\n");
-        mqtt.disconnect();
-        delay(5000);
-    }
-    Serial.printf("MQTT Connected!\n");
-}
+//     while((ret = mqtt.connect()) != 0){
+//         Serial.printf("Error Code %s\n", mqtt.connectErrorString(ret));
+//         Serial.printf("Retrying MQTT connection in 5 seconds...\n");
+//         mqtt.disconnect();
+//         delay(5000);
+//     }
+//     Serial.printf("MQTT Connected!\n");
+// }
 
-//Keeps the connection open to Adafruit
-bool MQTT_ping() {
-    static unsigned int last;
-    bool pingStatus;
+// //Keeps the connection open to Adafruit
+// bool MQTT_ping() {
+//     static unsigned int last;
+//     bool pingStatus;
 
-    if ((millis()-last)>120000) {
-        Serial.printf("Pinging MQTT \n");
-        pingStatus = mqtt.ping();
-        if(!pingStatus) {
-        Serial.printf("Disconnecting \n");
-        mqtt.disconnect();
-        }
-        last = millis();
-    }
-    return pingStatus;
-}
+//     if ((millis()-last)>120000) {
+//         Serial.printf("Pinging MQTT \n");
+//         pingStatus = mqtt.ping();
+//         if(!pingStatus) {
+//         Serial.printf("Disconnecting \n");
+//         mqtt.disconnect();
+//         }
+//         last = millis();
+//     }
+//     return pingStatus;
+// }
