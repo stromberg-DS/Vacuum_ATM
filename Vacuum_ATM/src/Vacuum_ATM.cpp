@@ -122,6 +122,7 @@ unsigned int demoDustStartTime = 0; //
 int demoDustRate = MAX_DUST / demoDustInterval;
 bool isDustBuilding = true;
 bool isDustPaused = false;
+bool waitingForReset = false;
 
 IoTTimer flashTimer;
 IoTTimer servoTimer;
@@ -177,6 +178,28 @@ void setup() {
 
 void loop() {
     Watchdog.refresh();
+
+    if (waitingForReset) {
+    // Show paused color or animation if you want
+    fillLEDs(YELLOWISH_RING, RING_PIXEL_MIN, RING_PIXEL_MAX);
+    fillLEDs(0, STRIP_PIXEL_MIN, STRIP_PIXEL_MAX);
+    pixel.show();
+
+    // Wait for user to press demoButton to reset
+      if (demoButton.isClicked()) {
+          Serial.println("Demo button pressed - resetting!");
+          waitingForReset = false;
+
+          // Reset dust and states
+          totalDust = 0;
+          isDustBuilding = false;
+          isDustPaused = false;
+          vacuumState = CHARGING_NOT_DIRTY;
+          lastVacuumState = -1;  // Force state print
+      } else {
+          return;  // Pause everything else until button is pressed
+      }
+  }
 
     // currentUnixTime = Time.now();
     // timeSinceVacuumed = currentUnixTime - previousUnixTime;
@@ -293,13 +316,14 @@ void loop() {
             moveServo(SERVO_OPEN);
             Serial.println("Door opening - cam clicked");
             fillLEDs(YELLOWISH_RING, RING_PIXEL_MIN, RING_PIXEL_MAX);
+            pixel.show();
         } else if (camButton.isReleased()) {
             Serial.println("Cam released. Starting Over.");
             isReadyToDispense = false;
             moveServo(SERVO_CLOSED);
             ringLEDDustLevel = RING_PIXEL_MAX;
             pixel.clear();
-            isDustPaused = false;
+            waitingForReset = true;
         }
     }
 
