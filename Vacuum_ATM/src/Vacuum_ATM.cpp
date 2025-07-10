@@ -114,7 +114,7 @@ Button vacButton(VAC_PIN);
 Button camButton(CAM_PIN);
 //////////////BELOW KINDA WORKS BUT THERE ARE SOME WEIRD READINGS///////
 /////////CHECK FOR WEIRDNESS ON THE PCB//////
-Button demoButton(D18);
+Button demoButton(S2); //This is the "D2" terminal on the board. I rewired it to S2. Yes my PCB is jacked, I don't know what to tell you.
 /////////
 IoTTimer flashTimer;
 IoTTimer servoTimer;
