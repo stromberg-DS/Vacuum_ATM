@@ -1,9 +1,9 @@
 /* 
- * Get Dust & Vacuum General Logic
- * Get dust values from plant. Test vacuum logic and timing.
- * 
- * Author: Daniel Stromberg
- * Date: 4/20/24
+This code has been HEAVILY chopped/abused to make an internet-free demo version for Open Sauce
+Yes I used ChatGPT to modify (read:obliterate) my program for that purpose.
+For the love of god, do not take this current version as an example of my skills, nor should this version be used as a guide.
+For something semi proper and a better representation of my work, look at this code before the "Demo mode" branch.
+Thanks buddies.
 */
 
 #include "Particle.h"
@@ -65,7 +65,9 @@ bool isVacReturned = 0;
 bool isVacRemoved = 0;
 
 
-const int VACUUMING_TIME = 600000;   //900,000 is 15 min, 600,000 = 10 min
+// const int VACUUMING_TIME = 600000;   //900,000 is 15 min, 600,000 = 10 min
+const int VACUUMING_TIME = 8000;    //dropped to 15 seconds for DEMO MODE
+
 const int MAX_DUST = 3000000;       //3,500,000 - roughly 1 week @500 particles/15 min 
 const int MAX_TIME_SINCE_VAC = 1209600;            //time in seconds - 1,209,600sec = 14 days
 
@@ -82,8 +84,8 @@ int ringLEDDustLevel = 0;
 int ringVacTimeLevel = 0;
 
 //Time
-unsigned int previousUnixTime;
-unsigned int currentUnixTime;
+// unsigned int previousUnixTime;
+// unsigned int currentUnixTime;
 unsigned int incomingStateChangeTime;
 time32_t now();
 
@@ -112,10 +114,15 @@ Adafruit_NeoPixel pixel(PIXEL_COUNT, SPI1, WS2812);
 Servo myServo;
 Button vacButton(VAC_PIN);
 Button camButton(CAM_PIN);
-//////////////BELOW KINDA WORKS BUT THERE ARE SOME WEIRD READINGS///////
-/////////CHECK FOR WEIRDNESS ON THE PCB//////
+
+//DEMO CRAP//
 Button demoButton(S2); //This is the "D2" terminal on the board. I rewired it to S2. Yes my PCB is jacked, I don't know what to tell you.
-/////////
+unsigned int demoDustInterval = 10000; //10 seconds
+unsigned int demoDustStartTime = 0; //
+int demoDustRate = MAX_DUST / demoDustInterval;
+bool isDustBuilding = true;
+bool isDustPaused = false;
+
 IoTTimer flashTimer;
 IoTTimer servoTimer;
 
@@ -145,11 +152,11 @@ void setup() {
     //     //wait to connect to particle cloud
     // }
 
-    previousUnixTime = EEPROM.get(timeAddress, previousUnixTime);
-    Serial.printf("PreviousTime: %u\n\n", previousUnixTime);
+    // previousUnixTime = EEPROM.get(timeAddress, previousUnixTime);
+    // Serial.printf("PreviousTime: %u\n\n", previousUnixTime);
 
 
-    totalDust = EEPROM.get(totalDustAddress, totalDust);
+    // totalDust = EEPROM.get(totalDustAddress, totalDust);
     totalDust = 0;  //For Demo Mode
     vacuumState = CHARGING_NOT_DIRTY; //start with no dust
     lastVacuumState = CHARGING_NOT_DIRTY;
@@ -165,114 +172,140 @@ void setup() {
     pinMode(7, OUTPUT);
     digitalWrite(7, LOW);
 
+    demoDustStartTime = millis();
 }
 
 void loop() {
-  Watchdog.refresh();
-    // MQTT_connect();
-    // MQTT_ping();
+    Watchdog.refresh();
 
-    currentUnixTime = Time.now();
-    timeSinceVacuumed = currentUnixTime - previousUnixTime;
+    // currentUnixTime = Time.now();
+    // timeSinceVacuumed = currentUnixTime - previousUnixTime;
 
-    if(vacuumState != lastVacuumState){
+    // --- Simulate dust buildup over 10 seconds ---
+    if (totalDust == 0 && !isDustBuilding) {
+        demoDustStartTime = millis();  // Restart dust accumulation timer
+        isDustBuilding = true;
+        Serial.printf("isDustBuilding = true\n");
+    }
+
+    if (isDustBuilding && totalDust <= MAX_DUST && !isDustPaused) {
+        unsigned int elapsed = millis() - demoDustStartTime;
+        totalDust = elapsed * demoDustRate;
+        totalDust = constrain(totalDust, 0, MAX_DUST);
+
+        ringLEDDustLevel = map(totalDust, 0, MAX_DUST, RING_PIXEL_MAX, RING_PIXEL_MIN);
+        ringLEDDustLevel = constrain(ringLEDDustLevel, RING_PIXEL_MIN, RING_PIXEL_MAX);
+        pixel.clear();
+        fillLEDs(REDDISH_RING, RING_PIXEL_MIN, RING_PIXEL_MAX);
+        fillLEDs(YELLOWISH_RING, RING_PIXEL_MIN, ringLEDDustLevel);
+        Serial.printf("filling ring\n");
+        pixel.show();
+
+        if (totalDust >= MAX_DUST) {
+            isDustBuilding = false;
+            Serial.println("Simulated dust has fully accumulated!");
+        }
+    }
+
+    // --- Log vacuum state changes ---
+    if (vacuumState != lastVacuumState) {
         Serial.printf("New Vacuum State:\n  %s\n\n", VAC_STATE_STRING[vacuumState].c_str());
-        lastVacStateTime = millis();    //track when state changes
+        lastVacStateTime = millis();
         lastVacuumState = vacuumState;
     }
 
-    // int pressedCheck = demoButton.isPressed();
-    Serial.printf("demoButton isPressed: %i\n\n", demoButton.isPressed());
-    delay(500);
-
-    // periodicPrint();
-    // getNewDustData();
-    // newDataLEDFlash();
-
-
-  ////Treat button like real vacuum
-  ////  pressed = vacuum on charger
-  ////  released = taking off charger
-  ////  not pressed = vacuuming
-  ////  clicked = putting back on charger
-  //
-  //If the house is dirty or it has been too long...
-  if((totalDust > MAX_DUST)){
-    ringVacTimeLevel = map(elapsedVacTime, 0, VACUUMING_TIME, RING_PIXEL_MAX, RING_PIXEL_MIN);
-    ringVacTimeLevel = constrain(ringVacTimeLevel, RING_PIXEL_MIN, RING_PIXEL_MAX);
-    fillLEDs(REDDISH_RING, RING_PIXEL_MIN, RING_PIXEL_MAX);
-    fillLEDs(GREENISH_RING, ringVacTimeLevel, RING_PIXEL_MAX);
-    fillLEDs(REDDISH_STRIP, STRIP_PIXEL_MIN, STRIP_PIXEL_MAX);
-
-    // fillLEDs(REDDISH_RING, RING_PIXEL_MIN, RING_PIXEL_MAX);
-    // fillLEDs(REDDISH_STRIP, STRIP_PIXEL_MIN, STRIP_PIXEL_MAX);
-    vacuumState = CHARGING_YES_DIRTY;
-
-
-    if(isVacRemoved){      //When vacuum removed
-      vacStartTime = millis();        //set the start vacuum timer 
-      isVacRemoved = false;
+    // --- Simulate vacuum pickup and return ---
+    if (demoButton.isPressed() && !isVacRemoved && vacuumState == CHARGING_YES_DIRTY) {
+        isVacRemoved = true;
+        isVacCharging = false;
+        Serial.println("Vacuum picked up (simulated)");
     }
-    //if you are vacuuming
-    if(!isVacCharging){
-      elapsedVacTime = prevVacTime+ (millis() - vacStartTime);
-      // ringVacTimeLevel = map(elapsedVacTime, 0, VACUUMING_TIME, RING_PIXEL_MAX, RING_PIXEL_MIN);
-      // ringVacTimeLevel = constrain(ringVacTimeLevel, RING_PIXEL_MIN, RING_PIXEL_MAX);
-      if(elapsedVacTime > VACUUMING_TIME){  //check if you have vacuumed long enough
-        fillLEDs(GREENISH_RING, RING_PIXEL_MIN, RING_PIXEL_MAX);
+
+    if (demoButton.isReleased() && !isVacReturned && vacuumState >= NOW_VACUUM_NO_REWARD) {
+        isVacReturned = true;
+        isVacCharging = true;
+        Serial.println("Vacuum returned (simulated)");
+    }
+
+    // --- Vacuum logic ---
+    if (totalDust >= MAX_DUST) {
+        ringVacTimeLevel = map(elapsedVacTime, 0, VACUUMING_TIME, RING_PIXEL_MAX, RING_PIXEL_MIN);
+        ringVacTimeLevel = constrain(ringVacTimeLevel, RING_PIXEL_MIN, RING_PIXEL_MAX);
+        fillLEDs(REDDISH_RING, RING_PIXEL_MIN, RING_PIXEL_MAX);
+        fillLEDs(GREENISH_RING, ringVacTimeLevel, RING_PIXEL_MAX);
+        fillLEDs(REDDISH_STRIP, STRIP_PIXEL_MIN, STRIP_PIXEL_MAX);
+        vacuumState = CHARGING_YES_DIRTY;
+
+        if (!isVacCharging) {
+            if (isVacRemoved) {
+                vacStartTime = millis();
+                isVacRemoved = false;
+            }
+
+            elapsedVacTime = prevVacTime + (millis() - vacStartTime);
+
+            if (elapsedVacTime > VACUUMING_TIME) {
+                fillLEDs(GREENISH_RING, RING_PIXEL_MIN, RING_PIXEL_MAX);
+                fillLEDs(0, STRIP_PIXEL_MIN, STRIP_PIXEL_MAX);
+                vacuumState = NOW_VACUUM_REWARD_READY;
+            } else {
+                vacuumState = NOW_VACUUM_NO_REWARD;
+            }
+        }
+
+        if (isVacReturned) {
+            isVacReturned = false;
+
+            if (elapsedVacTime > VACUUMING_TIME) {
+                totalDust = 0;
+                isDustPaused = true;
+                isDustBuilding = false;
+
+                totalDustK = 0;
+                timeSinceVacuumed = 0;
+                elapsedVacTime = 0;
+                prevVacTime = 0;
+                // previousUnixTime = currentUnixTime;
+                // EEPROM.put(timeAddress, currentUnixTime);
+                vacuumState = FINISHED_TAKE_REWARD;
+                isReadyToDispense = true;
+            } else {
+                isReadyToDispense = false;
+                prevVacTime = elapsedVacTime;
+                vacuumState = STOPPED_EARLY;
+                flashTimer.startTimer(2000);
+            }
+        }
+    } else if (!isDustBuilding) {
+        // Not dirty & not currently building dust — show dim ring
+        pixel.clear();
+        fillLEDs(0x553300, RING_PIXEL_MIN, RING_PIXEL_MAX);
+        fillLEDs(REDDISH_RING, ringLEDDustLevel, RING_PIXEL_MAX);
+        vacuumState = CHARGING_NOT_DIRTY;
+    }
+
+    // --- Reward logic ---
+    if (isReadyToDispense) {
+        fillLEDs(0x443322, RING_PIXEL_MIN, RING_PIXEL_MAX);
         fillLEDs(0, STRIP_PIXEL_MIN, STRIP_PIXEL_MAX);
-        vacuumState = NOW_VACUUM_REWARD_READY;
-      } else{
-        // fillLEDs(REDDISH_RING, RING_PIXEL_MIN, RING_PIXEL_MAX);
-        // fillLEDs(0x553300, ringVacTimeLevel, RING_PIXEL_MAX);
-        // fillLEDs(REDDISH_STRIP, STRIP_PIXEL_MIN, STRIP_PIXEL_MAX);
-        vacuumState = NOW_VACUUM_NO_REWARD;
-      }
-    }
-    //If the vacuum is returned
-    if(isVacReturned){         
-      isVacReturned = false;
-      if(elapsedVacTime > VACUUMING_TIME){  //check if you have vacuumed enough
-        totalDust =0;
-        totalDustK = 0;
-        timeSinceVacuumed = 0;
-        elapsedVacTime =0;
-        prevVacTime = 0;
-        previousUnixTime = currentUnixTime;
-        EEPROM.put(timeAddress, currentUnixTime);   //log last vacuum time in EEPROM
-        vacuumState = FINISHED_TAKE_REWARD;
-        isReadyToDispense = true;
-      }else{
-        isReadyToDispense = false;
-        prevVacTime = elapsedVacTime;
-        vacuumState = STOPPED_EARLY;
-        flashTimer.startTimer(2000);
-      }
-    }
-  }else{    //If the house is not dirty enough
 
-    pixel.clear();
-    fillLEDs(0x553300, RING_PIXEL_MIN, RING_PIXEL_MAX);
-    fillLEDs(REDDISH_RING, ringLEDDustLevel, RING_PIXEL_MAX);
-    vacuumState = CHARGING_NOT_DIRTY;
-  }
-
-if(isReadyToDispense){
-  fillLEDs(0x443322, RING_PIXEL_MIN, RING_PIXEL_MAX);
-  fillLEDs(0, STRIP_PIXEL_MIN, STRIP_PIXEL_MAX);
-  if(camButton.isClicked()){
-    moveServo(SERVO_OPEN);
-    Serial.printf("Door opening - cam clicked\n");
-  } else if (camButton.isReleased()){
-    isReadyToDispense = false;
-    moveServo(SERVO_CLOSED);
-    ringLEDDustLevel = RING_PIXEL_MAX;
-    pixel.clear();
-  }
-}
+        if (camButton.isClicked()) {
+            moveServo(SERVO_OPEN);
+            Serial.println("Door opening - cam clicked");
+            fillLEDs(YELLOWISH_RING, RING_PIXEL_MIN, RING_PIXEL_MAX);
+        } else if (camButton.isReleased()) {
+            Serial.println("Cam released. Starting Over.");
+            isReadyToDispense = false;
+            moveServo(SERVO_CLOSED);
+            ringLEDDustLevel = RING_PIXEL_MAX;
+            pixel.clear();
+            isDustPaused = false;
+        }
+    }
 
     pixel.show();
 }
+
 
 void moveServo(int position){
     position = constrain(position, 0, 180);
